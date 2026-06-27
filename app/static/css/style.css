@@ -20,6 +20,9 @@
 /* ── Reset y base ───────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* El atributo hidden siempre oculta, aunque el elemento tenga display:flex en CSS */
+[hidden] { display: none !important; }
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--gris-100);
