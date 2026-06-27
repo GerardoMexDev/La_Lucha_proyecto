@@ -43,7 +43,41 @@ Este proyecto se trabaja en sesiones separadas de Claude Code, que no tienen mem
 - Si el cambio es grande o podría romper algo que ya funcionaba, preguntar antes de hacer commit/push, aunque el resto sea automático.
 
 ## Estructura del proyecto
-(esta sección se completa la primera vez que se arma la estructura de carpetas — mantenerla actualizada cuando cambie)
+
+```
+caja_chica/
+├── run.py                        # Punto de entrada: arranca Flask y abre el navegador
+├── requirements.txt
+├── .gitignore
+├── plan_caja_chica.md            # Contexto de negocio y decisiones de arquitectura
+├── CLAUDE.md                     # Este archivo
+├── HISTORIAL_SESIONES.md         # Bitácora de sesiones
+│
+├── app/                          # Paquete Flask
+│   ├── __init__.py               # Factory: create_app()
+│   ├── db.py                     # Conexión SQLite + init_db()
+│   ├── schema.sql                # DDL + seed de categorías
+│   ├── models/
+│   │   └── movimientos.py        # Lógica de negocio (saldo, totales, queries)
+│   ├── routes/
+│   │   └── movimientos.py        # Rutas Flask (/, /movimiento/nuevo)
+│   ├── static/
+│   │   ├── css/style.css
+│   │   ├── js/main.js
+│   │   └── img/logo.png          # Logo de la empresa (no generado, copiar manualmente)
+│   └── templates/
+│       ├── base.html
+│       └── movimientos/
+│           └── cargar.html       # Pantalla principal: saldo + formulario + tabla del día
+│
+├── tests/
+│   └── test_movimientos.py       # Tests de lógica de negocio (pytest)
+│
+├── instance/                     # Creada automáticamente, NO se commitea
+│   └── caja_chica.db             # Base de datos SQLite real
+│
+└── venv/                         # Entorno virtual, NO se commitea
+```
 
 ## Cómo correr el proyecto localmente
 Ver `README.md`.

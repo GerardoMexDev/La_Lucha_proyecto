@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Caja Chica{% endblock %} · La Lucha Gomería</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="header">
+    <img src="{{ url_for('static', filename='img/logo.png') }}"
+         alt="La Lucha Gomería"
+         class="header-logo"
+         onerror="this.style.display='none'">
+    <span class="header-titulo">Caja <span>Chica</span></span>
+</header>
+
+<main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alertas">
+                {% for categoria, mensaje in messages %}
+                    <div class="alerta alerta-{{ categoria }}">
+                        {% if categoria == 'success' %}✓{% else %}✕{% endif %}
+                        {{ mensaje }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
