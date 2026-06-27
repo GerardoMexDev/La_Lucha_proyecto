@@ -1,0 +1,19 @@
+# Entorno virtual de Python
+venv/
+env/
+.venv/
+
+# Cache de Python
+__pycache__/
+*.pyc
+
+# Base de datos con datos reales de la empresa — nunca se sube
+*.db
+*.sqlite
+*.sqlite3
+
+# Variables de entorno / credenciales
+.env
+
+# Configuración local de VS Code
+.vscode/
