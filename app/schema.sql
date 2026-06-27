@@ -22,6 +22,7 @@ INSERT OR IGNORE INTO categorias (nombre, tipo) VALUES
     ('Ventas',                  'ingreso'),
     ('Servicios de taller',     'ingreso'),
     ('Otros ingresos',          'ingreso'),
+    ('Adelanto de sueldo',      'egreso'),
     ('Sueldos y adelantos',     'egreso'),
     ('Viáticos',                'egreso'),
     ('Insumos y suministros',   'egreso'),

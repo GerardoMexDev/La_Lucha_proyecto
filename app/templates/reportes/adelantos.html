@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block titulo %}Adelantos semanales{% endblock %}
+
+{% block content %}
+
+<div class="reporte-encabezado">
+    <h1 class="reporte-titulo">Adelantos de sueldo</h1>
+    <p class="reporte-subtitulo">Agrupados por semana · corte los sábados</p>
+</div>
+
+{% if not semanas %}
+    <div class="card tabla-vacia">
+        <span class="icono">📋</span>
+        No hay adelantos registrados todavía.<br>
+        <span style="font-size:13px;">Registrá un movimiento con categoría <strong>Adelanto de sueldo</strong> para que aparezca acá.</span>
+    </div>
+
+{% else %}
+    {% for sem in semanas %}
+    <div class="card semana-card {% if sem.es_semana_actual %}semana-actual{% endif %}">
+
+        <div class="semana-header">
+            <div class="semana-info">
+                {% if sem.es_semana_actual %}
+                    <span class="chip-semana-actual">Semana en curso</span>
+                {% endif %}
+                <span class="semana-titulo">
+                    {{ sem.lunes.strftime('%d/%m') }} → sábado {{ sem.sabado.strftime('%d/%m/%Y') }}
+                </span>
+            </div>
+            <div class="semana-totales">
+                {% if sem.total_uyu > 0 %}
+                <span class="total-pill total-pill-uyu">UYU $ {{ sem.total_uyu | formato_monto }}</span>
+                {% endif %}
+                {% if sem.total_usd > 0 %}
+                <span class="total-pill total-pill-usd">USD $ {{ sem.total_usd | formato_monto }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="tabla-movimientos">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Método</th>
+                        <th>Moneda</th>
+                        <th>Monto</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mov in sem.movimientos %}
+                    <tr>
+                        <td>{{ mov['fecha'] }}</td>
+                        <td>{{ mov['concepto'] }}</td>
+                        <td>
+                            <span class="badge-metodo badge-{{ mov['metodo_pago'] }}">
+                                {{ mov['metodo_pago'] }}
+                            </span>
+                        </td>
+                        <td>{{ mov['moneda'] }}</td>
+                        <td class="monto-egreso">− {{ mov['monto'] | formato_monto }}</td>
+                        <td class="txt-gris" style="font-size:13px;">{{ mov['observaciones'] or '' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

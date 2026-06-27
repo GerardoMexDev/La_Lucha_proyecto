@@ -22,6 +22,17 @@
          onerror="this.style.display='none'">
     <span class="header-titulo">Caja <span>Chica</span></span>
 
+    <nav class="header-nav">
+        <a href="{{ url_for('movimientos.index') }}"
+           class="nav-link {% if request.endpoint == 'movimientos.index' %}activo{% endif %}">
+            Caja del día
+        </a>
+        <a href="{{ url_for('movimientos.reporte_adelantos') }}"
+           class="nav-link {% if request.endpoint == 'movimientos.reporte_adelantos' %}activo{% endif %}">
+            Adelantos
+        </a>
+    </nav>
+
     <button id="btn-tema" type="button" class="btn-tema" title="Cambiar modo">
         <span class="tema-icono" id="icono-tema">☀</span>
         <span id="label-tema">Claro</span>

@@ -45,7 +45,7 @@
 
                     <div class="form-group">
                         <label>Tipo</label>
-                        <div class="radio-group" id="radio-tipo">
+                        <div class="radio-group">
                             <input type="radio" id="tipo-ingreso" name="tipo" value="ingreso" checked>
                             <label for="tipo-ingreso">↑ Ingreso</label>
                             <input type="radio" id="tipo-egreso" name="tipo" value="egreso">
@@ -88,8 +88,7 @@
                         <select id="categoria_id" name="categoria_id">
                             <option value="">— Sin categoría —</option>
                             {% for cat in categorias %}
-                                <option value="{{ cat['id'] }}"
-                                        data-tipo="{{ cat['tipo'] }}">
+                                <option value="{{ cat['id'] }}" data-tipo="{{ cat['tipo'] }}">
                                     {{ cat['nombre'] }}
                                 </option>
                             {% endfor %}
@@ -112,12 +111,11 @@
                     <div class="form-group">
                         <label for="observaciones">Observaciones <span class="txt-gris">(opcional)</span></label>
                         <textarea id="observaciones" name="observaciones"
-                                  placeholder="Notas adicionales…"
-                                  maxlength="500"></textarea>
+                                  placeholder="Notas adicionales…" maxlength="500"></textarea>
                     </div>
                 </div>
 
-            </div>{# /form-grid #}
+            </div>
 
             <div class="form-footer">
                 <button type="submit" class="btn-primary">Guardar movimiento</button>
@@ -151,6 +149,7 @@
                         <th>Moneda</th>
                         <th>Monto</th>
                         <th>Observaciones</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -176,6 +175,30 @@
                         <td class="txt-gris" style="font-size:13px;">
                             {{ mov['observaciones'] or '' }}
                         </td>
+                        <td class="acciones-celda">
+                            {# Botón editar: pasa todos los datos al modal via data-* #}
+                            <button type="button" class="btn-accion btn-editar"
+                                    data-id="{{ mov['id'] }}"
+                                    data-fecha="{{ mov['fecha'] }}"
+                                    data-tipo="{{ mov['tipo'] }}"
+                                    data-moneda="{{ mov['moneda'] }}"
+                                    data-monto="{{ mov['monto'] }}"
+                                    data-concepto="{{ mov['concepto'] | e }}"
+                                    data-categoria="{{ mov['categoria_id'] or '' }}"
+                                    data-metodo="{{ mov['metodo_pago'] }}"
+                                    data-obs="{{ mov['observaciones'] or '' | e }}"
+                                    onclick="abrirModalEditar(this)">
+                                Editar
+                            </button>
+                            {# Botón borrar: formulario POST independiente #}
+                            <form method="POST"
+                                  action="{{ url_for('movimientos.eliminar_movimiento_route', id=mov['id']) }}"
+                                  class="form-borrar"
+                                  onsubmit="return confirm('¿Borrar este movimiento?')">
+                                <input type="hidden" name="fecha" value="{{ fecha }}">
+                                <button type="submit" class="btn-accion btn-borrar">Borrar</button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -191,9 +214,7 @@
                 <table class="totales-tabla">
                     {% for t in totales_uyu %}
                     <tr>
-                        <td>
-                            <span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span>
-                        </td>
+                        <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
                         <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
                         <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
                     </tr>
@@ -208,9 +229,7 @@
                 <table class="totales-tabla">
                     {% for t in totales_usd %}
                     <tr>
-                        <td>
-                            <span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span>
-                        </td>
+                        <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
                         <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
                         <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
                     </tr>
@@ -230,6 +249,101 @@
         </div>
     {% endif %}
 
+</div>
+
+{# ── Modal de edición ────────────────────────────────────────────────────── #}
+<div id="modal-editar" class="modal-overlay" hidden>
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Editar movimiento</h2>
+            <button type="button" class="btn-cerrar" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" id="form-editar">
+
+                <div class="form-grid">
+
+                    <div class="form-row form-row-3">
+                        <div class="form-group">
+                            <label for="edit-fecha">Fecha</label>
+                            <input type="date" id="edit-fecha" name="fecha" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <div class="radio-group" id="edit-radio-tipo">
+                                <input type="radio" id="edit-tipo-ingreso" name="tipo" value="ingreso">
+                                <label for="edit-tipo-ingreso">↑ Ingreso</label>
+                                <input type="radio" id="edit-tipo-egreso" name="tipo" value="egreso">
+                                <label for="edit-tipo-egreso">↓ Egreso</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Moneda</label>
+                            <div class="radio-group">
+                                <input type="radio" id="edit-moneda-uyu" name="moneda" value="UYU">
+                                <label for="edit-moneda-uyu">$ UYU</label>
+                                <input type="radio" id="edit-moneda-usd" name="moneda" value="USD">
+                                <label for="edit-moneda-usd">$ USD</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="edit-monto">Monto</label>
+                            <input type="number" id="edit-monto" name="monto"
+                                   min="0.01" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-concepto">Concepto</label>
+                            <input type="text" id="edit-concepto" name="concepto"
+                                   maxlength="200" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="edit-categoria">Categoría</label>
+                            <select id="edit-categoria" name="categoria_id">
+                                <option value="">— Sin categoría —</option>
+                                {% for cat in categorias %}
+                                    <option value="{{ cat['id'] }}" data-tipo="{{ cat['tipo'] }}">
+                                        {{ cat['nombre'] }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-metodo">Método de pago</label>
+                            <select id="edit-metodo" name="metodo_pago">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-1">
+                        <div class="form-group">
+                            <label for="edit-obs">Observaciones <span class="txt-gris">(opcional)</span></label>
+                            <textarea id="edit-obs" name="observaciones" maxlength="500"></textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-footer modal-footer">
+                    <button type="button" class="btn-secundario" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar cambios</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

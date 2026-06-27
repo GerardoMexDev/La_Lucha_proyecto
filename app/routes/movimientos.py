@@ -7,9 +7,41 @@ from ..models.movimientos import (
     calcular_totales_dia,
     obtener_categorias,
     agregar_movimiento,
+    editar_movimiento,
+    eliminar_movimiento,
+    obtener_adelantos_por_semana,
 )
 
 bp = Blueprint('movimientos', __name__)
+
+
+def _validar_formulario(form):
+    """Extrae y valida los campos comunes de un formulario de movimiento."""
+    fecha = form.get('fecha', date.today().isoformat())
+    tipo = form.get('tipo', 'ingreso')
+    moneda = form.get('moneda', 'UYU')
+    monto_str = form.get('monto', '').strip().replace(',', '.')
+    concepto = form.get('concepto', '').strip()
+    categoria_id = form.get('categoria_id') or None
+    metodo_pago = form.get('metodo_pago', 'Efectivo')
+    observaciones = form.get('observaciones', '').strip() or None
+
+    errores = []
+    if not concepto:
+        errores.append('El concepto es obligatorio.')
+    monto = None
+    if not monto_str:
+        errores.append('El monto es obligatorio.')
+    else:
+        try:
+            monto = float(monto_str)
+            if monto <= 0:
+                errores.append('El monto debe ser mayor a 0.')
+        except ValueError:
+            errores.append('El monto debe ser un número válido.')
+
+    return (fecha, tipo, moneda, monto, concepto, categoria_id,
+            metodo_pago, observaciones, errores)
 
 
 @bp.route('/', methods=['GET'])
@@ -30,35 +62,48 @@ def index():
 
 @bp.route('/movimiento/nuevo', methods=['POST'])
 def nuevo_movimiento():
-    fecha = request.form.get('fecha', date.today().isoformat())
-    tipo = request.form.get('tipo', 'ingreso')
-    moneda = request.form.get('moneda', 'UYU')
-    monto_str = request.form.get('monto', '').strip().replace(',', '.')
-    concepto = request.form.get('concepto', '').strip()
-    categoria_id = request.form.get('categoria_id') or None
-    metodo_pago = request.form.get('metodo_pago', 'Efectivo')
-    observaciones = request.form.get('observaciones', '').strip() or None
-
-    errores = []
-    if not concepto:
-        errores.append('El concepto es obligatorio.')
-    monto = None
-    if not monto_str:
-        errores.append('El monto es obligatorio.')
-    else:
-        try:
-            monto = float(monto_str)
-            if monto <= 0:
-                errores.append('El monto debe ser mayor a 0.')
-        except ValueError:
-            errores.append('El monto debe ser un número válido.')
+    fecha, tipo, moneda, monto, concepto, categoria_id, \
+        metodo_pago, observaciones, errores = _validar_formulario(request.form)
 
     if errores:
-        for mensaje in errores:
-            flash(mensaje, 'error')
+        for msg in errores:
+            flash(msg, 'error')
         return redirect(url_for('movimientos.index', fecha=fecha))
 
     agregar_movimiento(fecha, tipo, moneda, monto, concepto,
                        categoria_id, metodo_pago, observaciones)
     flash('Movimiento registrado correctamente.', 'success')
     return redirect(url_for('movimientos.index', fecha=fecha))
+
+
+@bp.route('/movimiento/<int:id>/editar', methods=['POST'])
+def editar_movimiento_route(id):
+    fecha, tipo, moneda, monto, concepto, categoria_id, \
+        metodo_pago, observaciones, errores = _validar_formulario(request.form)
+
+    if errores:
+        for msg in errores:
+            flash(msg, 'error')
+        return redirect(url_for('movimientos.index', fecha=fecha))
+
+    editar_movimiento(id, fecha, tipo, moneda, monto, concepto,
+                      categoria_id, metodo_pago, observaciones)
+    flash('Movimiento actualizado.', 'success')
+    return redirect(url_for('movimientos.index', fecha=fecha))
+
+
+@bp.route('/movimiento/<int:id>/eliminar', methods=['POST'])
+def eliminar_movimiento_route(id):
+    fecha = request.form.get('fecha', date.today().isoformat())
+    eliminar_movimiento(id)
+    flash('Movimiento eliminado.', 'success')
+    return redirect(url_for('movimientos.index', fecha=fecha))
+
+
+@bp.route('/reporte/adelantos')
+def reporte_adelantos():
+    return render_template(
+        'reportes/adelantos.html',
+        semanas=obtener_adelantos_por_semana(),
+        hoy=date.today(),
+    )
