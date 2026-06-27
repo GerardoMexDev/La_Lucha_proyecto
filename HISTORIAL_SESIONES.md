@@ -40,3 +40,24 @@ Todavía no arrancó la codificación. La planeación completa de la Fase 1 (mod
 **Pendiente para la próxima sesión:**
 - El usuario debe copiar `logo.png` a `app/static/img/logo.png` para que aparezca en el header.
 - Siguiente funcionalidad a construir: editar/borrar movimientos + reporte diario (Pantallas 2 y 3 del plan).
+
+---
+
+## [2026-06-27] Categorías, tema oscuro, edición/borrado y reporte de adelantos
+
+**Hecho:**
+- Categorías: "Ventas y trabajos" separada en **"Ventas"** (cubiertas) y **"Servicios de taller"** (taller). Agregada **"Adelanto de sueldo"** (egreso).
+- Tema oscuro (fondo negro) como predeterminado, con switch en el header para alternar entre claro y oscuro. La preferencia se guarda en localStorage sin flash al cargar.
+- Logo colocado por el usuario en `app/static/img/logo_la_lucha.jpeg`.
+- **Editar y borrar movimientos**: botones en cada fila de la tabla. Editar abre un modal con los campos pre-cargados; borrar pide confirmación. Corregido bug donde el modal no cerraba (`display:flex` sobreescribía el atributo `hidden` — solucionado con `[hidden] { display: none !important }`).
+- **Reporte de adelantos** (`/reporte/adelantos`): agrupa los adelantos de sueldo por semana con corte los sábados, muestra totales UYU y USD por semana, marca la semana en curso. Accesible desde el nav del header.
+- 20 tests, todos pasan.
+
+**Decisiones:**
+- La semana del reporte de adelantos cierra el sábado (día del corte del negocio). El lunes de cada semana se calcula como sábado − 5 días.
+- El filtro de categorías por tipo (ingreso/egreso) funciona tanto en el formulario principal como en el modal de edición.
+
+**Pendiente para la próxima sesión:**
+- Reporte diario completo (Pantalla 3 del plan): elegir fecha, ver movimientos + saldo de efectivo + totales por método de pago en una vista de impresión/exportación.
+- Reporte semanal / por rango de fechas (Pantalla 4).
+- Filtros básicos por categoría, método de pago y moneda (Pantalla 5).
