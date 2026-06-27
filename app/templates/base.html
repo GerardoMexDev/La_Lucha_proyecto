@@ -1,10 +1,17 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titulo %}Caja Chica{% endblock %} · La Lucha Gomería</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# Aplica el tema guardado antes de que se pinte la página, evita el flash #}
+    <script>
+        (function () {
+            var tema = localStorage.getItem('caja-chica-tema') || 'dark';
+            document.documentElement.setAttribute('data-theme', tema);
+        })();
+    </script>
 </head>
 <body>
 
@@ -14,6 +21,11 @@
          class="header-logo"
          onerror="this.style.display='none'">
     <span class="header-titulo">Caja <span>Chica</span></span>
+
+    <button id="btn-tema" type="button" class="btn-tema" title="Cambiar modo">
+        <span class="tema-icono" id="icono-tema">☀</span>
+        <span id="label-tema">Claro</span>
+    </button>
 </header>
 
 <main class="main">

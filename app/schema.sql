@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS movimientos (
 
 -- Categorías iniciales (INSERT OR IGNORE = no falla si ya existen)
 INSERT OR IGNORE INTO categorias (nombre, tipo) VALUES
-    ('Ventas y trabajos',       'ingreso'),
+    ('Ventas',                  'ingreso'),
+    ('Servicios de taller',     'ingreso'),
     ('Otros ingresos',          'ingreso'),
     ('Sueldos y adelantos',     'egreso'),
     ('Viáticos',                'egreso'),

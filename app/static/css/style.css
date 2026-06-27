@@ -494,6 +494,135 @@ body {
 .txt-rojo  { color: var(--rojo); }
 .txt-gris  { color: var(--gris-500); }
 
+/* ── Switch de tema (header) ────────────────────────────────────────────────── */
+.header-titulo {
+    flex: 1;  /* empuja el switch hacia la derecha */
+}
+
+.btn-tema {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 5px 14px 5px 10px;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.btn-tema:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.btn-tema .tema-icono {
+    font-size: 15px;
+    line-height: 1;
+}
+
+/* ── Tema oscuro (dark) ─────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+    --oscuro:      #E8E8E8;
+    --gris-700:    #C0C0C0;
+    --gris-500:    #888888;
+    --gris-200:    #2C2C2C;
+    --gris-100:    #111111;
+    --blanco:      #161616;
+    --verde-bg:    #0B2015;
+    --rojo-bg:     #200B0B;
+    --sombra-card: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] body {
+    background: #0A0A0A;
+}
+
+[data-theme="dark"] .header {
+    background: #000000;
+    border-bottom: 1px solid #242424;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Inputs y selects */
+[data-theme="dark"] .form-group input[type="text"],
+[data-theme="dark"] .form-group input[type="number"],
+[data-theme="dark"] .form-group input[type="date"],
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+    background: #1C1C1C;
+    border-color: #333;
+    color: #E0E0E0;
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder {
+    color: #555;
+}
+
+/* Radio buttons */
+[data-theme="dark"] .radio-group {
+    border-color: #333;
+}
+
+[data-theme="dark"] .radio-group label {
+    background: #1C1C1C;
+    color: #888;
+}
+
+[data-theme="dark"] .radio-group label:not(:last-child) {
+    border-color: #333;
+}
+
+/* Tabla */
+[data-theme="dark"] .tabla-movimientos th {
+    border-bottom-color: #2C2C2C;
+}
+
+[data-theme="dark"] .tabla-movimientos td {
+    border-bottom-color: #222;
+}
+
+[data-theme="dark"] .tabla-movimientos tbody tr:hover {
+    background: #1A1A1A;
+}
+
+/* Totales */
+[data-theme="dark"] .totales-row {
+    background: #0F0F0F;
+    border-top-color: #2C2C2C;
+}
+
+/* Card header */
+[data-theme="dark"] .card-header {
+    border-bottom-color: #2C2C2C;
+}
+
+/* Badges de método de pago */
+[data-theme="dark"] .badge-metodo       { background: #2C2C2C; color: #AAAAAA; }
+[data-theme="dark"] .badge-Efectivo     { background: #0B2015; color: #4CAF50; }
+[data-theme="dark"] .badge-Tarjeta      { background: #0B1527; color: #64B5F6; }
+[data-theme="dark"] .badge-Transferencia { background: #2B1A06; color: #FFA726; }
+[data-theme="dark"] .badge-Cheque       { background: #1A0B2B; color: #CE93D8; }
+
+/* Selector de fecha en tabla */
+[data-theme="dark"] .fecha-selector input[type="date"] {
+    background: #1C1C1C;
+    border-color: #333;
+    color: #E0E0E0;
+    color-scheme: dark;
+}
+
+/* Alertas */
+[data-theme="dark"] .alerta-success { background: #0B2015; color: #4CAF50; }
+[data-theme="dark"] .alerta-error   { background: #200B0B; color: #EF5350; }
+
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
     .saldo-grid { grid-template-columns: 1fr; }
