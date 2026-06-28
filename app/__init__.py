@@ -29,4 +29,13 @@ def create_app(test_config=None):
         except (ValueError, TypeError):
             return '0'
 
+    @app.template_filter('formato_fecha')
+    def formato_fecha(valor):
+        """Convierte 'YYYY-MM-DD' a 'DD/MM/YYYY'."""
+        try:
+            from datetime import datetime
+            return datetime.strptime(str(valor), '%Y-%m-%d').strftime('%d/%m/%Y')
+        except (ValueError, TypeError):
+            return str(valor)
+
     return app

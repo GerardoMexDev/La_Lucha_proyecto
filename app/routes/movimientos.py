@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import date
 
 from ..models.movimientos import (
-    calcular_saldo_efectivo,
     obtener_movimientos_del_dia,
     calcular_totales_dia,
     obtener_categorias,
@@ -10,6 +9,9 @@ from ..models.movimientos import (
     editar_movimiento,
     eliminar_movimiento,
     obtener_adelantos_por_semana,
+    obtener_fondo_caja,
+    establecer_fondo_caja,
+    calcular_totales_dia_por_tipo,
 )
 
 bp = Blueprint('movimientos', __name__)
@@ -47,19 +49,53 @@ def _validar_formulario(form):
 @bp.route('/', methods=['GET'])
 def index():
     fecha = request.args.get('fecha', date.today().isoformat())
+
+    fondo_uyu    = obtener_fondo_caja(fecha, 'UYU')
+    totales_uyu  = calcular_totales_dia(fecha, 'UYU')
+
+    # Extraer ingresos y egresos efectivo UYU del día
+    ef_uyu = next((t for t in totales_uyu if t['metodo_pago'] == 'Efectivo'), None)
+    ingresos_ef_uyu = float(ef_uyu['total_ingresos']) if ef_uyu else 0.0
+    egresos_ef_uyu  = float(ef_uyu['total_egresos'])  if ef_uyu else 0.0
+
     return render_template(
         'movimientos/cargar.html',
         fecha=fecha,
         hoy=date.today().isoformat(),
-        saldo_uyu=calcular_saldo_efectivo('UYU'),
-        saldo_usd=calcular_saldo_efectivo('USD'),
-        saldo_brl=calcular_saldo_efectivo('BRL'),
+        # Caja UYU: fondo + efectivo del día
+        fondo_uyu=fondo_uyu,
+        ingresos_ef_uyu=ingresos_ef_uyu,
+        egresos_ef_uyu=egresos_ef_uyu,
+        saldo_dia_uyu=fondo_uyu + ingresos_ef_uyu - egresos_ef_uyu,
+        # USD y BRL: solo totales informativos del día
+        totales_dia_usd=calcular_totales_dia_por_tipo(fecha, 'USD'),
+        totales_dia_brl=calcular_totales_dia_por_tipo(fecha, 'BRL'),
+        # Tabla de movimientos del día
         movimientos=obtener_movimientos_del_dia(fecha),
-        totales_uyu=calcular_totales_dia(fecha, 'UYU'),
+        # Desglose por método (para la tabla de totales)
+        totales_uyu=totales_uyu,
         totales_usd=calcular_totales_dia(fecha, 'USD'),
         totales_brl=calcular_totales_dia(fecha, 'BRL'),
         categorias=obtener_categorias(),
     )
+
+
+@bp.route('/fondo_caja', methods=['POST'])
+def guardar_fondo_caja():
+    fecha  = request.form.get('fecha', date.today().isoformat())
+    moneda = request.form.get('moneda', 'UYU')
+    monto_str = request.form.get('monto', '').strip().replace(',', '.')
+    try:
+        monto = float(monto_str)
+        if monto < 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        flash('El fondo de caja debe ser un número mayor o igual a 0.', 'error')
+        return redirect(url_for('movimientos.index', fecha=fecha))
+
+    establecer_fondo_caja(fecha, moneda, monto)
+    flash(f'Fondo de caja {moneda} actualizado: {monto:,.0f}', 'success')
+    return redirect(url_for('movimientos.index', fecha=fecha))
 
 
 @bp.route('/movimiento/nuevo', methods=['POST'])

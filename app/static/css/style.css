@@ -185,6 +185,50 @@ body {
 .saldo-monto.negativo { color: var(--rojo); }
 .saldo-monto.cero     { color: var(--gris-500); }
 
+.saldo-formula {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--gris-500);
+    align-items: center;
+}
+
+.formula-item { white-space: nowrap; }
+.formula-sep  { color: var(--gris-500); font-weight: 700; }
+
+/* ── Fondo de caja ──────────────────────────────────────────────────────────── */
+.fondo-card { margin-bottom: 20px; }
+
+.fondo-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.fondo-moneda-col { flex: 0 0 140px; }
+.fondo-monto-col  { flex: 1 1 160px; }
+.fondo-btn-col    { flex: 0 0 auto; }
+.fondo-btn-col button { margin-bottom: 0; }
+
+/* ── Toggle tabla movimientos ───────────────────────────────────────────────── */
+.btn-toggle-movs {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gris-700);
+    padding: 0;
+    letter-spacing: 0.2px;
+}
+
+.btn-toggle-movs:hover { color: var(--oscuro); }
+
+.txt-sm { font-size: 13px; }
+
 .saldo-desc {
     font-size: 12px;
     color: var(--gris-500);
@@ -392,6 +436,17 @@ body {
     background: var(--gris-100);
 }
 
+.tabla-movimientos tfoot .fila-total td {
+    padding: 10px 14px;
+    font-weight: 700;
+    border-top: 2px solid var(--gris-200);
+    background: var(--gris-100);
+}
+
+.col-fecha { white-space: nowrap; }
+.col-monto { text-align: right; white-space: nowrap; }
+.tabla-scroll { overflow-x: auto; }
+
 /* Chip de tipo */
 .chip {
     display: inline-flex;
@@ -461,7 +516,7 @@ body {
 /* ── Totales del día ────────────────────────────────────────────────────────── */
 .totales-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
     margin-bottom: 0;
     padding: 14px 20px;

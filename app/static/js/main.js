@@ -111,3 +111,13 @@ function cerrarModal() {
     if (modal) modal.hidden = true;
     document.body.style.overflow = '';
 }
+
+
+// ── Toggle tabla de movimientos del día ────────────────────────────────────────
+function toggleMovimientos(btn) {
+    var tabla = document.getElementById('tabla-movimientos');
+    if (!tabla) return;
+    var visible = !tabla.hidden;
+    tabla.hidden = visible;
+    btn.textContent = (visible ? '▶' : '▼') + btn.textContent.slice(1);
+}

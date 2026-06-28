@@ -5,14 +5,14 @@
 
 <div class="reporte-encabezado">
     <h1 class="reporte-titulo">Adelantos de sueldo</h1>
-    <p class="reporte-subtitulo">Agrupados por semana · corte los sábados</p>
+    <p class="reporte-subtitulo">Totalizados por semana · corte los sábados</p>
 </div>
 
 {% if not semanas %}
     <div class="card tabla-vacia">
         <span class="icono">📋</span>
         No hay adelantos registrados todavía.<br>
-        <span style="font-size:13px;">Registrá un movimiento con categoría <strong>Adelanto de sueldo</strong> para que aparezca acá.</span>
+        <span class="txt-sm">Registrá un movimiento con categoría <strong>Adelanto de sueldo</strong> para que aparezca acá.</span>
     </div>
 
 {% else %}
@@ -25,7 +25,7 @@
                     <span class="chip-semana-actual">Semana en curso</span>
                 {% endif %}
                 <span class="semana-titulo">
-                    {{ sem.lunes.strftime('%d/%m') }} → sábado {{ sem.sabado.strftime('%d/%m/%Y') }}
+                    {{ sem.lunes.strftime('%d/%m') }} → {{ sem.sabado.strftime('%d/%m/%Y') }}
                 </span>
             </div>
             <div class="semana-totales">
@@ -38,34 +38,44 @@
             </div>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div class="tabla-scroll">
             <table class="tabla-movimientos">
                 <thead>
                     <tr>
                         <th>Fecha</th>
-                        <th>Concepto</th>
-                        <th>Método</th>
-                        <th>Moneda</th>
-                        <th>Monto</th>
+                        <th>Empleado / Concepto</th>
+                        <th class="col-monto">Monto UYU</th>
+                        <th class="col-monto">Monto USD</th>
                         <th>Observaciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for mov in sem.movimientos %}
                     <tr>
-                        <td>{{ mov['fecha'] }}</td>
+                        <td class="col-fecha">{{ mov['fecha'] | formato_fecha }}</td>
                         <td>{{ mov['concepto'] }}</td>
-                        <td>
-                            <span class="badge-metodo badge-{{ mov['metodo_pago'] }}">
-                                {{ mov['metodo_pago'] }}
-                            </span>
+                        <td class="col-monto monto-egreso">
+                            {% if mov['moneda'] == 'UYU' %}− {{ mov['monto'] | formato_monto }}{% endif %}
                         </td>
-                        <td>{{ mov['moneda'] }}</td>
-                        <td class="monto-egreso">− {{ mov['monto'] | formato_monto }}</td>
-                        <td class="txt-gris" style="font-size:13px;">{{ mov['observaciones'] or '' }}</td>
+                        <td class="col-monto monto-egreso">
+                            {% if mov['moneda'] == 'USD' %}− {{ mov['monto'] | formato_monto }}{% endif %}
+                        </td>
+                        <td class="txt-gris txt-sm">{{ mov['observaciones'] or '' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr class="fila-total">
+                        <td colspan="2" class="txt-gris">Total semana</td>
+                        <td class="col-monto monto-egreso">
+                            {% if sem.total_uyu > 0 %}− {{ sem.total_uyu | formato_monto }}{% endif %}
+                        </td>
+                        <td class="col-monto monto-egreso">
+                            {% if sem.total_usd > 0 %}− {{ sem.total_usd | formato_monto }}{% endif %}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 

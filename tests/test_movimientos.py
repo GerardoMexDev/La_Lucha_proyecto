@@ -8,6 +8,10 @@ from app.models.movimientos import (
     eliminar_movimiento,
     obtener_movimientos_del_dia,
     obtener_adelantos_por_semana,
+    obtener_fondo_caja,
+    establecer_fondo_caja,
+    calcular_neto_efectivo_dia,
+    calcular_totales_dia_por_tipo,
 )
 
 FECHA_TEST = '2024-01-15'
@@ -197,3 +201,48 @@ def test_adelantos_usd_y_uyu_se_totalizan_por_separado(app):
     assert len(semanas) == 1
     assert semanas[0]['total_uyu'] == 5000.0
     assert semanas[0]['total_usd'] == 100.0
+
+
+# ── Fondo de caja ──────────────────────────────────────────────────────────────
+
+def test_fondo_caja_inicial_es_cero(app):
+    assert obtener_fondo_caja(FECHA_TEST, 'UYU') == 0.0
+
+
+def test_establecer_fondo_caja(app):
+    establecer_fondo_caja(FECHA_TEST, 'UYU', 5000)
+    assert obtener_fondo_caja(FECHA_TEST, 'UYU') == 5000.0
+
+
+def test_fondo_caja_se_actualiza(app):
+    establecer_fondo_caja(FECHA_TEST, 'UYU', 5000)
+    establecer_fondo_caja(FECHA_TEST, 'UYU', 3000)
+    assert obtener_fondo_caja(FECHA_TEST, 'UYU') == 3000.0
+
+
+def test_fondo_caja_se_hereda_de_fecha_anterior(app):
+    # Fondo puesto el día 10 debe estar vigente el día 15
+    establecer_fondo_caja('2024-01-10', 'UYU', 2000)
+    assert obtener_fondo_caja('2024-01-15', 'UYU') == 2000.0
+
+
+def test_fondo_caja_no_afecta_otra_moneda(app):
+    establecer_fondo_caja(FECHA_TEST, 'UYU', 5000)
+    assert obtener_fondo_caja(FECHA_TEST, 'USD') == 0.0
+
+
+def test_saldo_dia_con_fondo(app):
+    establecer_fondo_caja(FECHA_TEST, 'UYU', 2000)
+    agregar_movimiento(FECHA_TEST, 'ingreso', 'UYU', 1000, 'Venta', None, 'Efectivo', None)
+    agregar_movimiento(FECHA_TEST, 'egreso',  'UYU', 300,  'Gasto', None, 'Efectivo', None)
+    fondo = obtener_fondo_caja(FECHA_TEST, 'UYU')
+    neto  = calcular_neto_efectivo_dia(FECHA_TEST, 'UYU')
+    assert fondo + neto == 2700.0
+
+
+def test_totales_dia_por_tipo(app):
+    agregar_movimiento(FECHA_TEST, 'ingreso', 'USD', 200, 'Cobro USD', None, 'Efectivo', None)
+    agregar_movimiento(FECHA_TEST, 'egreso',  'USD', 50,  'Gasto USD', None, 'Efectivo', None)
+    totales = calcular_totales_dia_por_tipo(FECHA_TEST, 'USD')
+    assert totales['total_ingresos'] == 200.0
+    assert totales['total_egresos']  == 50.0

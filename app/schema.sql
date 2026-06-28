@@ -17,6 +17,14 @@ CREATE TABLE IF NOT EXISTS movimientos (
     creado_en    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+CREATE TABLE IF NOT EXISTS fondo_caja (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha   TEXT NOT NULL,
+    moneda  TEXT NOT NULL CHECK(moneda IN ('UYU', 'USD', 'BRL')),
+    monto   REAL NOT NULL CHECK(monto >= 0),
+    UNIQUE(fecha, moneda)
+);
+
 -- Categorías iniciales (INSERT OR IGNORE = no falla si ya existen)
 INSERT OR IGNORE INTO categorias (nombre, tipo) VALUES
     ('Ventas',                  'ingreso'),

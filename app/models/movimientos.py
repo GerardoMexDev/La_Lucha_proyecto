@@ -106,6 +106,73 @@ def eliminar_movimiento(id):
     db.commit()
 
 
+def obtener_fondo_caja(fecha, moneda):
+    """
+    Devuelve el fondo de caja vigente para la fecha y moneda dadas.
+    Busca la entrada más reciente con fecha <= la pedida.
+    """
+    db = get_db()
+    fila = db.execute(
+        """
+        SELECT monto FROM fondo_caja
+        WHERE moneda = ? AND fecha <= ?
+        ORDER BY fecha DESC
+        LIMIT 1
+        """,
+        (moneda, fecha)
+    ).fetchone()
+    return float(fila['monto']) if fila else 0.0
+
+
+def establecer_fondo_caja(fecha, moneda, monto):
+    """Guarda o actualiza el fondo de caja para una fecha y moneda."""
+    db = get_db()
+    db.execute(
+        """
+        INSERT INTO fondo_caja (fecha, moneda, monto)
+        VALUES (?, ?, ?)
+        ON CONFLICT(fecha, moneda) DO UPDATE SET monto = excluded.monto
+        """,
+        (fecha, moneda, float(monto))
+    )
+    db.commit()
+
+
+def calcular_neto_efectivo_dia(fecha, moneda):
+    """Suma neta (ingresos − egresos) de movimientos en Efectivo para un día."""
+    db = get_db()
+    fila = db.execute(
+        """
+        SELECT COALESCE(
+            SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END), 0
+        ) AS neto
+        FROM movimientos
+        WHERE fecha = ? AND moneda = ? AND metodo_pago = 'Efectivo'
+        """,
+        (fecha, moneda)
+    ).fetchone()
+    return float(fila['neto']) if fila else 0.0
+
+
+def calcular_totales_dia_por_tipo(fecha, moneda):
+    """Ingresos y egresos totales del día para una moneda (todos los métodos)."""
+    db = get_db()
+    fila = db.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0) AS total_ingresos,
+            COALESCE(SUM(CASE WHEN tipo = 'egreso'  THEN monto ELSE 0 END), 0) AS total_egresos
+        FROM movimientos
+        WHERE fecha = ? AND moneda = ?
+        """,
+        (fecha, moneda)
+    ).fetchone()
+    return {
+        'total_ingresos': float(fila['total_ingresos']),
+        'total_egresos':  float(fila['total_egresos']),
+    }
+
+
 def obtener_adelantos_por_semana():
     """
     Retorna los adelantos de sueldo agrupados por semana.

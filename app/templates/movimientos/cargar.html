@@ -3,39 +3,92 @@
 
 {% block content %}
 
-{# ── Saldo de caja en efectivo ───────────────────────────────────────────── #}
+{# ── Sección superior: saldos del día ───────────────────────────────────────── #}
 <div class="saldo-grid">
 
+    {# UYU: fondo + efectivo del día #}
     <div class="card saldo-card saldo-card-uyu">
-        <span class="saldo-label">Saldo efectivo</span>
-        <span class="saldo-moneda">Pesos uruguayos · UYU $</span>
-        <span class="saldo-monto {% if saldo_uyu > 0 %}positivo{% elif saldo_uyu < 0 %}negativo{% else %}cero{% endif %}">
-            {{ saldo_uyu | formato_monto }}
+        <span class="saldo-label">Caja del día · Efectivo UYU</span>
+        <span class="saldo-moneda">Pesos uruguayos</span>
+        <span class="saldo-monto {% if saldo_dia_uyu > 0 %}positivo{% elif saldo_dia_uyu < 0 %}negativo{% else %}cero{% endif %}">
+            {{ saldo_dia_uyu | formato_monto }}
         </span>
-        <span class="saldo-desc">Acumulado en caja física</span>
+        <div class="saldo-formula">
+            <span class="formula-item">Fondo: <strong>{{ fondo_uyu | formato_monto }}</strong></span>
+            <span class="formula-sep">+</span>
+            <span class="formula-item txt-verde">Ingr. ef.: <strong>{{ ingresos_ef_uyu | formato_monto }}</strong></span>
+            <span class="formula-sep">−</span>
+            <span class="formula-item txt-rojo">Egr. ef.: <strong>{{ egresos_ef_uyu | formato_monto }}</strong></span>
+        </div>
     </div>
 
+    {# USD: solo info del día #}
     <div class="card saldo-card saldo-card-usd">
-        <span class="saldo-label">Saldo efectivo</span>
-        <span class="saldo-moneda">Dólares · USD $</span>
-        <span class="saldo-monto {% if saldo_usd > 0 %}positivo{% elif saldo_usd < 0 %}negativo{% else %}cero{% endif %}">
-            {{ saldo_usd | formato_monto }}
+        <span class="saldo-label">Movimientos del día · USD</span>
+        <span class="saldo-moneda">Dólares · informativos</span>
+        <span class="saldo-monto {% if totales_dia_usd.total_ingresos > 0 or totales_dia_usd.total_egresos > 0 %}positivo{% else %}cero{% endif %}">
+            {{ (totales_dia_usd.total_ingresos - totales_dia_usd.total_egresos) | formato_monto }}
         </span>
-        <span class="saldo-desc">Acumulado en caja física</span>
+        <div class="saldo-formula">
+            <span class="formula-item txt-verde">Ingr.: <strong>{{ totales_dia_usd.total_ingresos | formato_monto }}</strong></span>
+            <span class="formula-sep">/</span>
+            <span class="formula-item txt-rojo">Egr.: <strong>{{ totales_dia_usd.total_egresos | formato_monto }}</strong></span>
+        </div>
     </div>
 
+    {# BRL: solo info del día #}
     <div class="card saldo-card saldo-card-brl">
-        <span class="saldo-label">Saldo efectivo</span>
-        <span class="saldo-moneda">Reales · BRL R$</span>
-        <span class="saldo-monto {% if saldo_brl > 0 %}positivo{% elif saldo_brl < 0 %}negativo{% else %}cero{% endif %}">
-            {{ saldo_brl | formato_monto }}
+        <span class="saldo-label">Movimientos del día · BRL</span>
+        <span class="saldo-moneda">Reales · informativos</span>
+        <span class="saldo-monto {% if totales_dia_brl.total_ingresos > 0 or totales_dia_brl.total_egresos > 0 %}positivo{% else %}cero{% endif %}">
+            {{ (totales_dia_brl.total_ingresos - totales_dia_brl.total_egresos) | formato_monto }}
         </span>
-        <span class="saldo-desc">Acumulado en caja física</span>
+        <div class="saldo-formula">
+            <span class="formula-item txt-verde">Ingr.: <strong>{{ totales_dia_brl.total_ingresos | formato_monto }}</strong></span>
+            <span class="formula-sep">/</span>
+            <span class="formula-item txt-rojo">Egr.: <strong>{{ totales_dia_brl.total_egresos | formato_monto }}</strong></span>
+        </div>
     </div>
 
 </div>
 
-{# ── Formulario de carga ─────────────────────────────────────────────────── #}
+{# ── Fondo de caja ───────────────────────────────────────────────────────────── #}
+<div class="card fondo-card">
+    <div class="card-header">
+        <h2>Fondo de caja inicial</h2>
+        <span class="txt-gris" style="font-size:13px;">
+            Ingresá el efectivo físico disponible al inicio del día o período.
+            Tarjeta, transferencia y cheque <strong>no</strong> se cuentan como efectivo.
+        </span>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('movimientos.guardar_fondo_caja') }}" class="fondo-form">
+            <input type="hidden" name="fecha" value="{{ fecha }}">
+            <div class="fondo-row">
+                <div class="form-group fondo-moneda-col">
+                    <label for="fondo-moneda">Moneda</label>
+                    <select id="fondo-moneda" name="moneda">
+                        <option value="UYU">$ UYU</option>
+                        <option value="USD">$ USD</option>
+                        <option value="BRL">R$ BRL</option>
+                    </select>
+                </div>
+                <div class="form-group fondo-monto-col">
+                    <label for="fondo-monto">Monto del fondo</label>
+                    <input type="number" id="fondo-monto" name="monto"
+                           min="0" step="0.01" placeholder="0"
+                           value="{{ fondo_uyu }}"
+                           autocomplete="off">
+                </div>
+                <div class="form-group fondo-btn-col">
+                    <button type="submit" class="btn-secundario">Guardar fondo</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Formulario de carga ─────────────────────────────────────────────────────── #}
 <div class="card form-card">
     <div class="card-header">
         <h2>Registrar movimiento</h2>
@@ -110,9 +163,9 @@
                         <label for="metodo_pago">Método de pago</label>
                         <select id="metodo_pago" name="metodo_pago">
                             <option value="Efectivo">Efectivo</option>
-                            <option value="Tarjeta">Tarjeta</option>
-                            <option value="Transferencia">Transferencia</option>
-                            <option value="Cheque">Cheque</option>
+                            <option value="Tarjeta">Tarjeta (→ banco)</option>
+                            <option value="Transferencia">Transferencia (→ banco)</option>
+                            <option value="Cheque">Cheque (→ banco)</option>
                         </select>
                     </div>
                 </div>
@@ -136,19 +189,79 @@
     </div>
 </div>
 
-{# ── Movimientos del día ─────────────────────────────────────────────────── #}
+{# ── Totales del día ─────────────────────────────────────────────────────────── #}
+{% if totales_uyu or totales_usd or totales_brl %}
 <div class="card">
     <div class="card-header">
         <div class="movimientos-header">
-            <h2>Movimientos del día</h2>
+            <h2>Totales del día</h2>
             <form method="GET" action="{{ url_for('movimientos.index') }}" class="fecha-selector">
                 <input type="date" name="fecha" value="{{ fecha }}"
                        onchange="this.form.submit()" title="Cambiar fecha">
             </form>
         </div>
     </div>
+    <div class="totales-row">
 
-    {% if movimientos %}
+        <div class="totales-bloque">
+            <h3>UYU $ · Solo efectivo cuenta para el saldo</h3>
+            <table class="totales-tabla">
+                {% for t in totales_uyu %}
+                <tr>
+                    <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
+                    <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
+                    <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="txt-gris" colspan="3">Sin movimientos UYU</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="totales-bloque">
+            <h3>USD $ · Informativos (van a banco)</h3>
+            <table class="totales-tabla">
+                {% for t in totales_usd %}
+                <tr>
+                    <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
+                    <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
+                    <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="txt-gris" colspan="3">Sin movimientos USD</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="totales-bloque">
+            <h3>BRL R$ · Informativos (van a cambio/banco)</h3>
+            <table class="totales-tabla">
+                {% for t in totales_brl %}
+                <tr>
+                    <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
+                    <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
+                    <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="txt-gris" colspan="3">Sin movimientos BRL</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+
+    </div>
+</div>
+{% endif %}
+
+{# ── Movimientos del día (tabla detalle) ─────────────────────────────────────── #}
+<div class="card">
+    <div class="card-header">
+        <button type="button" class="btn-toggle-movs" onclick="toggleMovimientos(this)">
+            ▶ Ver movimientos del día ({{ movimientos | length }})
+        </button>
+    </div>
+
+    <div id="tabla-movimientos" hidden>
+        {% if movimientos %}
         <div style="overflow-x: auto;">
             <table class="tabla-movimientos">
                 <thead>
@@ -183,11 +296,10 @@
                         <td class="monto-{{ mov['tipo'] }}">
                             {{ '+ ' if mov['tipo'] == 'ingreso' else '− ' }}{{ mov['monto'] | formato_monto }}
                         </td>
-                        <td class="txt-gris" style="font-size:13px;">
+                        <td class="txt-gris txt-sm">
                             {{ mov['observaciones'] or '' }}
                         </td>
                         <td class="acciones-celda">
-                            {# Botón editar: pasa todos los datos al modal via data-* #}
                             <button type="button" class="btn-accion btn-editar"
                                     data-id="{{ mov['id'] }}"
                                     data-fecha="{{ mov['fecha'] }}"
@@ -201,7 +313,6 @@
                                     onclick="abrirModalEditar(this)">
                                 Editar
                             </button>
-                            {# Botón borrar: formulario POST independiente #}
                             <form method="POST"
                                   action="{{ url_for('movimientos.eliminar_movimiento_route', id=mov['id']) }}"
                                   class="form-borrar"
@@ -215,69 +326,16 @@
                 </tbody>
             </table>
         </div>
-
-        {# Totales del día #}
-        {% if totales_uyu or totales_usd or totales_brl %}
-        <div class="totales-row">
-
-            <div class="totales-bloque">
-                <h3>Totales del día · UYU $</h3>
-                <table class="totales-tabla">
-                    {% for t in totales_uyu %}
-                    <tr>
-                        <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
-                        <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
-                        <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td class="txt-gris" colspan="3">Sin movimientos UYU</td></tr>
-                    {% endfor %}
-                </table>
-            </div>
-
-            <div class="totales-bloque">
-                <h3>Totales del día · USD $</h3>
-                <table class="totales-tabla">
-                    {% for t in totales_usd %}
-                    <tr>
-                        <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
-                        <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
-                        <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td class="txt-gris" colspan="3">Sin movimientos USD</td></tr>
-                    {% endfor %}
-                </table>
-            </div>
-
-            <div class="totales-bloque">
-                <h3>Totales del día · BRL R$</h3>
-                <table class="totales-tabla">
-                    {% for t in totales_brl %}
-                    <tr>
-                        <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
-                        <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
-                        <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td class="txt-gris" colspan="3">Sin movimientos BRL</td></tr>
-                    {% endfor %}
-                </table>
-            </div>
-
-        </div>
-        {% endif %}
-
-    {% else %}
+        {% else %}
         <div class="tabla-vacia">
             <span class="icono">📋</span>
             No hay movimientos registrados para esta fecha.
         </div>
-    {% endif %}
-
+        {% endif %}
+    </div>
 </div>
 
-{# ── Modal de edición ────────────────────────────────────────────────────── #}
+{# ── Modal de edición ────────────────────────────────────────────────────────── #}
 <div id="modal-editar" class="modal-overlay" hidden>
     <div class="modal">
         <div class="modal-header">
@@ -348,9 +406,9 @@
                             <label for="edit-metodo">Método de pago</label>
                             <select id="edit-metodo" name="metodo_pago">
                                 <option value="Efectivo">Efectivo</option>
-                                <option value="Tarjeta">Tarjeta</option>
-                                <option value="Transferencia">Transferencia</option>
-                                <option value="Cheque">Cheque</option>
+                                <option value="Tarjeta">Tarjeta (→ banco)</option>
+                                <option value="Transferencia">Transferencia (→ banco)</option>
+                                <option value="Cheque">Cheque (→ banco)</option>
                             </select>
                         </div>
                     </div>
