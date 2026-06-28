@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block titulo %}Dashboard{% endblock %}
+
+{% block content %}
+
+{# ── Encabezado + selector de período ───────────────────────────────────── #}
+<div class="reporte-encabezado reporte-encabezado-flex">
+    <div>
+        <h1 class="reporte-titulo">Dashboard</h1>
+        <p class="reporte-subtitulo">{{ fecha_desde | formato_fecha }} → {{ fecha_hasta | formato_fecha }}</p>
+    </div>
+    <div class="dash-periodo-btns">
+        <a href="{{ url_for('movimientos.dashboard', dias=7) }}"
+           class="btn-periodo {% if dias == 7 %}activo{% endif %}">7 días</a>
+        <a href="{{ url_for('movimientos.dashboard', dias=14) }}"
+           class="btn-periodo {% if dias == 14 %}activo{% endif %}">14 días</a>
+        <a href="{{ url_for('movimientos.dashboard', dias=30) }}"
+           class="btn-periodo {% if dias == 30 %}activo{% endif %}">30 días</a>
+        <a href="{{ url_for('movimientos.dashboard', dias=90) }}"
+           class="btn-periodo {% if dias == 90 %}activo{% endif %}">90 días</a>
+    </div>
+</div>
+
+{# ── Gráfica de ingresos y egresos ──────────────────────────────────────── #}
+<div class="card dash-chart-card">
+    <div class="card-header">
+        <div class="dash-chart-header">
+            <h2>Ingresos vs Egresos</h2>
+            <div class="dash-moneda-tabs">
+                <button class="tab-moneda activo" onclick="cambiarMoneda('UYU', this)">$ UYU</button>
+                <button class="tab-moneda" onclick="cambiarMoneda('USD', this)">$ USD</button>
+                <button class="tab-moneda" onclick="cambiarMoneda('BRL', this)">R$ BRL</button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="chart-container">
+            <canvas id="grafica-principal"></canvas>
+        </div>
+    </div>
+</div>
+
+{# ── Tablas por categoría ───────────────────────────────────────────────── #}
+<div class="dash-tablas-grid">
+
+    <div class="card">
+        <div class="card-header"><h2>Por categoría · UYU</h2></div>
+        <div class="card-body" style="padding:0;">
+            {% if totales_cat_uyu %}
+            <table class="tabla-movimientos">
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th class="col-monto txt-verde">Ingresos</th>
+                        <th class="col-monto txt-rojo">Egresos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in totales_cat_uyu %}
+                    <tr>
+                        <td>{{ cat['categoria'] }}</td>
+                        <td class="col-monto txt-verde">
+                            {% if cat['total_ingresos'] > 0 %}{{ cat['total_ingresos'] | formato_monto }}{% else %}—{% endif %}
+                        </td>
+                        <td class="col-monto txt-rojo">
+                            {% if cat['total_egresos'] > 0 %}{{ cat['total_egresos'] | formato_monto }}{% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="tabla-vacia"><span class="icono">📊</span>Sin datos UYU en el período.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>Por categoría · USD</h2></div>
+        <div class="card-body" style="padding:0;">
+            {% if totales_cat_usd %}
+            <table class="tabla-movimientos">
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th class="col-monto txt-verde">Ingresos</th>
+                        <th class="col-monto txt-rojo">Egresos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in totales_cat_usd %}
+                    <tr>
+                        <td>{{ cat['categoria'] }}</td>
+                        <td class="col-monto txt-verde">
+                            {% if cat['total_ingresos'] > 0 %}{{ cat['total_ingresos'] | formato_monto }}{% else %}—{% endif %}
+                        </td>
+                        <td class="col-monto txt-rojo">
+                            {% if cat['total_egresos'] > 0 %}{{ cat['total_egresos'] | formato_monto }}{% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="tabla-vacia"><span class="icono">📊</span>Sin datos USD en el período.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+{# Datos para Chart.js, generados server-side #}
+<script>
+var GRAFICA_DATA  = {{ datos_grafica | tojson }};
+var GRAFICA_DIAS  = {{ dias_labels | tojson }};
+var monedaActual  = 'UYU';
+var chart         = null;
+
+function etiquetaCorta(fecha) {
+    var partes = fecha.split('-');
+    return partes[2] + '/' + partes[1];
+}
+
+function construirDatasets(moneda) {
+    var datos  = GRAFICA_DATA[moneda] || {};
+    var ingr   = GRAFICA_DIAS.map(function(d) { return (datos[d] || {ingresos:0}).ingresos; });
+    var egr    = GRAFICA_DIAS.map(function(d) { return (datos[d] || {egresos:0}).egresos; });
+    return {
+        ingresos: ingr,
+        egresos:  egr,
+    };
+}
+
+function crearGrafica(moneda) {
+    var ctx = document.getElementById('grafica-principal').getContext('2d');
+    var ds  = construirDatasets(moneda);
+    var labels = GRAFICA_DIAS.map(etiquetaCorta);
+
+    if (chart) { chart.destroy(); }
+
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var gridColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+    var tickColor  = isDark ? '#888' : '#777';
+    var borderColor = isDark ? '#222' : '#E8E8E8';
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Ingresos',
+                    data: ds.ingresos,
+                    backgroundColor: 'rgba(30, 125, 60, 0.75)',
+                    borderColor: 'rgba(30, 125, 60, 1)',
+                    borderWidth: 1,
+                    borderRadius: 3,
+                },
+                {
+                    label: 'Egresos',
+                    data: ds.egresos,
+                    backgroundColor: 'rgba(196, 30, 30, 0.70)',
+                    borderColor: 'rgba(196, 30, 30, 1)',
+                    borderWidth: 1,
+                    borderRadius: 3,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    labels: { color: tickColor, font: { size: 13 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('es-UY', {minimumFractionDigits:0, maximumFractionDigits:0});
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: tickColor, maxRotation: 45, minRotation: 0, font: { size: 11 } },
+                    grid: { color: gridColor },
+                    border: { color: borderColor }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: tickColor,
+                        callback: function(v) {
+                            return v >= 1000 ? (v/1000).toFixed(0) + 'k' : v;
+                        }
+                    },
+                    grid: { color: gridColor },
+                    border: { color: borderColor }
+                }
+            }
+        }
+    });
+}
+
+function cambiarMoneda(moneda, btn) {
+    monedaActual = moneda;
+    document.querySelectorAll('.tab-moneda').forEach(function(b) { b.classList.remove('activo'); });
+    btn.classList.add('activo');
+    crearGrafica(moneda);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    crearGrafica('UYU');
+
+    // Re-crear el gráfico cuando cambia el tema (colores)
+    var btnTema = document.getElementById('btn-tema');
+    if (btnTema) {
+        btnTema.addEventListener('click', function () {
+            setTimeout(function() { crearGrafica(monedaActual); }, 50);
+        });
+    }
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+{% endblock %}

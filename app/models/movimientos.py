@@ -175,18 +175,19 @@ def calcular_totales_dia_por_tipo(fecha, moneda):
 
 def obtener_adelantos_por_semana():
     """
-    Retorna los adelantos de sueldo agrupados por semana.
+    Retorna los adelantos de sueldo agrupados por semana y luego por empleado
+    (el campo concepto actúa como nombre del empleado).
     Cada semana cierra el sábado (corte semanal del negocio).
     """
     db = get_db()
     filas = db.execute(
         """
         SELECT m.id, m.fecha, m.concepto, m.moneda, m.monto,
-               m.metodo_pago, m.observaciones
+               m.metodo_pago, m.observaciones, m.categoria_id
         FROM movimientos m
         JOIN categorias c ON m.categoria_id = c.id
         WHERE c.nombre = 'Adelanto de sueldo'
-        ORDER BY m.fecha, m.creado_en
+        ORDER BY m.fecha, m.concepto, m.creado_en
         """
     ).fetchall()
 
@@ -195,8 +196,6 @@ def obtener_adelantos_por_semana():
 
     for fila in filas:
         fecha = datetime.strptime(fila['fecha'], '%Y-%m-%d').date()
-        # Sábado de cierre de la semana que contiene esta fecha
-        # Python weekday(): lunes=0 ... sábado=5 ... domingo=6
         dias_hasta_sabado = (5 - fecha.weekday()) % 7
         sabado = fecha + timedelta(days=dias_hasta_sabado)
         lunes = sabado - timedelta(days=5)
@@ -207,14 +206,79 @@ def obtener_adelantos_por_semana():
                 'sabado': sabado,
                 'lunes': lunes,
                 'es_semana_actual': sabado >= hoy,
+                'empleados': {},
+                'total_uyu': 0.0,
+                'total_usd': 0.0,
+            }
+
+        empleado = fila['concepto']
+        if empleado not in semanas[clave]['empleados']:
+            semanas[clave]['empleados'][empleado] = {
+                'nombre': empleado,
                 'movimientos': [],
                 'total_uyu': 0.0,
                 'total_usd': 0.0,
             }
-        semanas[clave]['movimientos'].append(dict(fila))
+
+        semanas[clave]['empleados'][empleado]['movimientos'].append(dict(fila))
         if fila['moneda'] == 'UYU':
-            semanas[clave]['total_uyu'] += fila['monto']
-        else:
-            semanas[clave]['total_usd'] += fila['monto']
+            semanas[clave]['empleados'][empleado]['total_uyu'] += float(fila['monto'])
+            semanas[clave]['total_uyu'] += float(fila['monto'])
+        elif fila['moneda'] == 'USD':
+            semanas[clave]['empleados'][empleado]['total_usd'] += float(fila['monto'])
+            semanas[clave]['total_usd'] += float(fila['monto'])
+
+    for sem in semanas.values():
+        sem['empleados'] = sorted(sem['empleados'].values(), key=lambda e: e['nombre'])
 
     return sorted(semanas.values(), key=lambda s: s['sabado'], reverse=True)
+
+
+def obtener_totales_por_categoria(fecha_desde, fecha_hasta, moneda='UYU'):
+    """Ingresos y egresos por categoría en un rango de fechas."""
+    db = get_db()
+    return db.execute(
+        """
+        SELECT COALESCE(c.nombre, 'Sin categoría') AS categoria,
+               COALESCE(c.tipo, 'ambos') AS tipo_cat,
+               SUM(CASE WHEN m.tipo='ingreso' THEN m.monto ELSE 0 END) AS total_ingresos,
+               SUM(CASE WHEN m.tipo='egreso'  THEN m.monto ELSE 0 END) AS total_egresos
+        FROM movimientos m
+        LEFT JOIN categorias c ON m.categoria_id = c.id
+        WHERE m.fecha BETWEEN ? AND ? AND m.moneda = ?
+        GROUP BY m.categoria_id, c.nombre
+        ORDER BY total_egresos DESC, total_ingresos DESC
+        """,
+        (fecha_desde, fecha_hasta, moneda)
+    ).fetchall()
+
+
+def obtener_datos_grafica(dias=30):
+    """
+    Ingresos y egresos por día de los últimos N días, agrupados por moneda.
+    Retorna dict { 'UYU': {'YYYY-MM-DD': {'ingresos': x, 'egresos': y}, ...}, ... }
+    """
+    db = get_db()
+    desde = (date_type.today() - timedelta(days=dias - 1)).isoformat()
+    filas = db.execute(
+        """
+        SELECT fecha, moneda,
+               SUM(CASE WHEN tipo='ingreso' THEN monto ELSE 0 END) AS ingresos,
+               SUM(CASE WHEN tipo='egreso'  THEN monto ELSE 0 END) AS egresos
+        FROM movimientos
+        WHERE fecha >= ?
+        GROUP BY fecha, moneda
+        ORDER BY fecha, moneda
+        """,
+        (desde,)
+    ).fetchall()
+
+    result = {'UYU': {}, 'USD': {}, 'BRL': {}}
+    for fila in filas:
+        m = fila['moneda']
+        if m in result:
+            result[m][fila['fecha']] = {
+                'ingresos': float(fila['ingresos']),
+                'egresos': float(fila['egresos']),
+            }
+    return result

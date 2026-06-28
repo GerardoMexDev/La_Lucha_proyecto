@@ -27,9 +27,17 @@
            class="nav-link {% if request.endpoint == 'movimientos.index' %}activo{% endif %}">
             Caja del día
         </a>
+        <a href="{{ url_for('movimientos.reporte_caja_diaria') }}"
+           class="nav-link {% if request.endpoint == 'movimientos.reporte_caja_diaria' %}activo{% endif %}">
+            Reporte diario
+        </a>
         <a href="{{ url_for('movimientos.reporte_adelantos') }}"
            class="nav-link {% if request.endpoint == 'movimientos.reporte_adelantos' %}activo{% endif %}">
             Adelantos
+        </a>
+        <a href="{{ url_for('movimientos.dashboard') }}"
+           class="nav-link {% if request.endpoint == 'movimientos.dashboard' %}activo{% endif %}">
+            Dashboard
         </a>
     </nav>
 

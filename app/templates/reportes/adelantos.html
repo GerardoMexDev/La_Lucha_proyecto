@@ -3,9 +3,15 @@
 
 {% block content %}
 
-<div class="reporte-encabezado">
-    <h1 class="reporte-titulo">Adelantos de sueldo</h1>
-    <p class="reporte-subtitulo">Totalizados por semana · corte los sábados</p>
+<div class="reporte-encabezado reporte-encabezado-flex">
+    <div>
+        <h1 class="reporte-titulo">Adelantos de sueldo</h1>
+        <p class="reporte-subtitulo">Por empleado · semanas con corte los sábados</p>
+    </div>
+    <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppAdelantos()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar por WhatsApp
+    </button>
 </div>
 
 {% if not semanas %}
@@ -38,49 +44,242 @@
             </div>
         </div>
 
-        <div class="tabla-scroll">
-            <table class="tabla-movimientos">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Empleado / Concepto</th>
-                        <th class="col-monto">Monto UYU</th>
-                        <th class="col-monto">Monto USD</th>
-                        <th>Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for mov in sem.movimientos %}
-                    <tr>
-                        <td class="col-fecha">{{ mov['fecha'] | formato_fecha }}</td>
-                        <td>{{ mov['concepto'] }}</td>
-                        <td class="col-monto monto-egreso">
-                            {% if mov['moneda'] == 'UYU' %}− {{ mov['monto'] | formato_monto }}{% endif %}
-                        </td>
-                        <td class="col-monto monto-egreso">
-                            {% if mov['moneda'] == 'USD' %}− {{ mov['monto'] | formato_monto }}{% endif %}
-                        </td>
-                        <td class="txt-gris txt-sm">{{ mov['observaciones'] or '' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr class="fila-total">
-                        <td colspan="2" class="txt-gris">Total semana</td>
-                        <td class="col-monto monto-egreso">
-                            {% if sem.total_uyu > 0 %}− {{ sem.total_uyu | formato_monto }}{% endif %}
-                        </td>
-                        <td class="col-monto monto-egreso">
-                            {% if sem.total_usd > 0 %}− {{ sem.total_usd | formato_monto }}{% endif %}
-                        </td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
+        {# Empleados dentro de la semana #}
+        {% for emp in sem.empleados %}
+        <div class="empleado-bloque">
+            <div class="empleado-header">
+                <span class="empleado-nombre">{{ emp.nombre }}</span>
+                <div class="empleado-totales">
+                    {% if emp.total_uyu > 0 %}
+                    <span class="emp-total-uyu">$ {{ emp.total_uyu | formato_monto }}</span>
+                    {% endif %}
+                    {% if emp.total_usd > 0 %}
+                    <span class="emp-total-usd">U$S {{ emp.total_usd | formato_monto }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="tabla-scroll">
+                <table class="tabla-movimientos tabla-adelantos">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Monto UYU</th>
+                            <th>Monto USD</th>
+                            <th>Método</th>
+                            <th>Observaciones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in emp.movimientos %}
+                        <tr>
+                            <td class="col-fecha">{{ mov['fecha'] | formato_fecha }}</td>
+                            <td class="col-monto monto-egreso">
+                                {% if mov['moneda'] == 'UYU' %}− {{ mov['monto'] | formato_monto }}{% endif %}
+                            </td>
+                            <td class="col-monto monto-egreso">
+                                {% if mov['moneda'] == 'USD' %}− {{ mov['monto'] | formato_monto }}{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge-metodo badge-{{ mov['metodo_pago'] }}">{{ mov['metodo_pago'] }}</span>
+                            </td>
+                            <td class="txt-gris txt-sm">{{ mov['observaciones'] or '' }}</td>
+                            <td class="acciones-celda">
+                                <button type="button" class="btn-accion btn-editar"
+                                        data-id="{{ mov['id'] }}"
+                                        data-fecha="{{ mov['fecha'] }}"
+                                        data-tipo="egreso"
+                                        data-moneda="{{ mov['moneda'] }}"
+                                        data-monto="{{ mov['monto'] }}"
+                                        data-concepto="{{ mov['concepto'] | e }}"
+                                        data-categoria="{{ mov['categoria_id'] or '' }}"
+                                        data-metodo="{{ mov['metodo_pago'] }}"
+                                        data-obs="{{ mov['observaciones'] or '' | e }}"
+                                        onclick="abrirModalAdelanto(this)">
+                                    Editar
+                                </button>
+                                <form method="POST"
+                                      action="{{ url_for('movimientos.eliminar_movimiento_route', id=mov['id']) }}"
+                                      class="form-borrar"
+                                      onsubmit="return confirm('¿Borrar este adelanto?')">
+                                    <input type="hidden" name="fecha" value="{{ mov['fecha'] }}">
+                                    <input type="hidden" name="next" value="{{ url_for('movimientos.reporte_adelantos') }}">
+                                    <button type="submit" class="btn-accion btn-borrar">Borrar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fila-total">
+                            <td class="txt-gris">Total {{ emp.nombre }}</td>
+                            <td class="col-monto monto-egreso">
+                                {% if emp.total_uyu > 0 %}− {{ emp.total_uyu | formato_monto }}{% endif %}
+                            </td>
+                            <td class="col-monto monto-egreso">
+                                {% if emp.total_usd > 0 %}− {{ emp.total_usd | formato_monto }}{% endif %}
+                            </td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+
+        {# Total de la semana #}
+        <div class="semana-footer">
+            <span class="txt-gris txt-sm">Total semana</span>
+            {% if sem.total_uyu > 0 %}
+            <span class="semana-total-num monto-egreso">− $ {{ sem.total_uyu | formato_monto }} UYU</span>
+            {% endif %}
+            {% if sem.total_usd > 0 %}
+            <span class="semana-total-num monto-egreso">− $ {{ sem.total_usd | formato_monto }} USD</span>
+            {% endif %}
         </div>
 
     </div>
     {% endfor %}
 {% endif %}
+
+{# ── Modal de edición de adelanto ──────────────────────────────────────────── #}
+<div id="modal-adelanto" class="modal-overlay" hidden>
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Editar adelanto</h2>
+            <button type="button" class="btn-cerrar" onclick="cerrarModalAdelanto()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" id="form-adelanto">
+                <input type="hidden" name="next" value="{{ url_for('movimientos.reporte_adelantos') }}">
+                <input type="hidden" name="tipo" value="egreso">
+
+                <div class="form-grid">
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="ad-fecha">Fecha</label>
+                            <input type="date" id="ad-fecha" name="fecha" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Moneda</label>
+                            <div class="radio-group">
+                                <input type="radio" id="ad-moneda-uyu" name="moneda" value="UYU">
+                                <label for="ad-moneda-uyu">$ UYU</label>
+                                <input type="radio" id="ad-moneda-usd" name="moneda" value="USD">
+                                <label for="ad-moneda-usd">$ USD</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="ad-monto">Monto</label>
+                            <input type="number" id="ad-monto" name="monto" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ad-concepto">Empleado / Concepto</label>
+                            <input type="text" id="ad-concepto" name="concepto" maxlength="200" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="ad-metodo">Método de pago</label>
+                            <select id="ad-metodo" name="metodo_pago">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ad-categoria">Categoría</label>
+                            <select id="ad-categoria" name="categoria_id">
+                                {% for cat in categorias %}
+                                    <option value="{{ cat['id'] }}">{{ cat['nombre'] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-1">
+                        <div class="form-group">
+                            <label for="ad-obs">Observaciones <span class="txt-gris">(opcional)</span></label>
+                            <textarea id="ad-obs" name="observaciones" maxlength="500"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-footer modal-footer">
+                    <button type="button" class="btn-secundario" onclick="cerrarModalAdelanto()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModalAdelanto(btn) {
+    var modal = document.getElementById('modal-adelanto');
+    var form  = document.getElementById('form-adelanto');
+    if (!modal || !form) return;
+
+    form.action = '/movimiento/' + btn.dataset.id + '/editar';
+    document.getElementById('ad-fecha').value    = btn.dataset.fecha;
+    document.getElementById('ad-monto').value    = btn.dataset.monto;
+    document.getElementById('ad-concepto').value = btn.dataset.concepto;
+    document.getElementById('ad-obs').value      = btn.dataset.obs;
+    document.getElementById('ad-metodo').value   = btn.dataset.metodo;
+
+    var monedaRadio = form.querySelector('input[name="moneda"][value="' + btn.dataset.moneda + '"]');
+    if (monedaRadio) monedaRadio.checked = true;
+
+    var selectCat = document.getElementById('ad-categoria');
+    if (selectCat && btn.dataset.categoria) selectCat.value = btn.dataset.categoria;
+
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalAdelanto() {
+    var modal = document.getElementById('modal-adelanto');
+    if (modal) modal.hidden = true;
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var overlay = document.getElementById('modal-adelanto');
+    if (overlay) {
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) cerrarModalAdelanto();
+        });
+    }
+});
+
+function enviarWhatsAppAdelantos() {
+    var semanas = document.querySelectorAll('.semana-card');
+    var lineas = ['Adelantos de sueldo\nLa Lucha Gomería\n'];
+    semanas.forEach(function(sem) {
+        var titulo = sem.querySelector('.semana-titulo');
+        var totales = sem.querySelector('.semana-totales');
+        if (titulo) lineas.push('\nSemana ' + titulo.textContent.trim());
+        if (totales) lineas.push(totales.textContent.trim().replace(/\s+/g, ' '));
+        sem.querySelectorAll('.empleado-bloque').forEach(function(emp) {
+            var nombre = emp.querySelector('.empleado-nombre');
+            if (nombre) lineas.push('  ' + nombre.textContent.trim() + ':');
+            emp.querySelectorAll('tbody tr').forEach(function(tr) {
+                var celdas = tr.querySelectorAll('td');
+                if (celdas.length >= 2) {
+                    var fecha = celdas[0].textContent.trim();
+                    var monto = (celdas[1].textContent.trim() || celdas[2].textContent.trim());
+                    if (fecha) lineas.push('    ' + fecha + ' ' + monto);
+                }
+            });
+        });
+    });
+    var texto = lineas.join('\n');
+    window.open('https://wa.me/{{ wa_numero }}?text=' + encodeURIComponent(texto), '_blank');
+}
+</script>
 
 {% endblock %}

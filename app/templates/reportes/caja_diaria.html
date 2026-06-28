@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block titulo %}Reporte diario · {{ fecha | formato_fecha }}{% endblock %}
+
+{% block content %}
+
+{# ── Encabezado con selector de fecha y acciones ─────────────────────────── #}
+<div class="reporte-encabezado reporte-encabezado-flex">
+    <div>
+        <h1 class="reporte-titulo">Reporte de Caja</h1>
+        <p class="reporte-subtitulo">{{ fecha | formato_fecha }}</p>
+    </div>
+    <div class="reporte-acciones">
+        <form method="GET" action="{{ url_for('movimientos.reporte_caja_diaria') }}" class="fecha-selector">
+            <input type="date" name="fecha" value="{{ fecha }}"
+                   onchange="this.form.submit()" title="Cambiar fecha">
+        </form>
+        <button type="button" class="btn-whatsapp" onclick="enviarWhatsApp()">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Enviar por WhatsApp
+        </button>
+        <button type="button" class="btn-secundario btn-imprimir" onclick="window.print()">
+            Imprimir
+        </button>
+    </div>
+</div>
+
+{# ── Tarjetas de saldo ──────────────────────────────────────────────────── #}
+<div class="saldo-grid">
+    <div class="card saldo-card saldo-card-uyu">
+        <span class="saldo-label">Caja · Efectivo UYU</span>
+        <span class="saldo-moneda">Pesos uruguayos</span>
+        <span class="saldo-monto {% if saldo_uyu > 0 %}positivo{% elif saldo_uyu < 0 %}negativo{% else %}cero{% endif %}">
+            {{ saldo_uyu | formato_monto }}
+        </span>
+        <div class="saldo-formula">
+            <span class="formula-item">Fondo: <strong>{{ fondo_uyu | formato_monto }}</strong></span>
+            <span class="formula-sep">+</span>
+            <span class="formula-item txt-verde">Ingr. ef.: <strong>{{ ingresos_ef_uyu | formato_monto }}</strong></span>
+            <span class="formula-sep">−</span>
+            <span class="formula-item txt-rojo">Egr. ef.: <strong>{{ egresos_ef_uyu | formato_monto }}</strong></span>
+        </div>
+    </div>
+
+    <div class="card saldo-card saldo-card-usd">
+        <span class="saldo-label">Movimientos · USD</span>
+        <span class="saldo-moneda">Dólares · informativos</span>
+        <span class="saldo-monto {% if totales_dia_usd.total_ingresos > 0 or totales_dia_usd.total_egresos > 0 %}positivo{% else %}cero{% endif %}">
+            {{ (totales_dia_usd.total_ingresos - totales_dia_usd.total_egresos) | formato_monto }}
+        </span>
+        <div class="saldo-formula">
+            <span class="formula-item txt-verde">Ingr.: <strong>{{ totales_dia_usd.total_ingresos | formato_monto }}</strong></span>
+            <span class="formula-sep">/</span>
+            <span class="formula-item txt-rojo">Egr.: <strong>{{ totales_dia_usd.total_egresos | formato_monto }}</strong></span>
+        </div>
+    </div>
+
+    <div class="card saldo-card saldo-card-brl">
+        <span class="saldo-label">Movimientos · BRL</span>
+        <span class="saldo-moneda">Reales · informativos</span>
+        <span class="saldo-monto {% if totales_dia_brl.total_ingresos > 0 or totales_dia_brl.total_egresos > 0 %}positivo{% else %}cero{% endif %}">
+            {{ (totales_dia_brl.total_ingresos - totales_dia_brl.total_egresos) | formato_monto }}
+        </span>
+        <div class="saldo-formula">
+            <span class="formula-item txt-verde">Ingr.: <strong>{{ totales_dia_brl.total_ingresos | formato_monto }}</strong></span>
+            <span class="formula-sep">/</span>
+            <span class="formula-item txt-rojo">Egr.: <strong>{{ totales_dia_brl.total_egresos | formato_monto }}</strong></span>
+        </div>
+    </div>
+</div>
+
+{# ── Totales por método de pago ─────────────────────────────────────────── #}
+{% if totales_uyu or totales_usd or totales_brl %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><h2>Totales por método de pago</h2></div>
+    <div class="totales-row">
+        <div class="totales-bloque">
+            <h3>UYU · Solo efectivo al saldo</h3>
+            <table class="totales-tabla">
+                {% for t in totales_uyu %}
+                <tr>
+                    <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
+                    <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
+                    <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="txt-gris" colspan="3">Sin movimientos</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="totales-bloque">
+            <h3>USD · Informativos</h3>
+            <table class="totales-tabla">
+                {% for t in totales_usd %}
+                <tr>
+                    <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
+                    <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
+                    <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="txt-gris" colspan="3">Sin movimientos</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="totales-bloque">
+            <h3>BRL · Informativos</h3>
+            <table class="totales-tabla">
+                {% for t in totales_brl %}
+                <tr>
+                    <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
+                    <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
+                    <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="txt-gris" colspan="3">Sin movimientos</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Totales por categoría ──────────────────────────────────────────────── #}
+{% if totales_cat_uyu %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><h2>Totales por categoría · UYU</h2></div>
+    <div class="card-body" style="padding:0;">
+        <table class="tabla-movimientos">
+            <thead>
+                <tr>
+                    <th>Categoría</th>
+                    <th class="col-monto txt-verde">Ingresos</th>
+                    <th class="col-monto txt-rojo">Egresos</th>
+                    <th class="col-monto">Neto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in totales_cat_uyu %}
+                {% set neto = cat['total_ingresos'] - cat['total_egresos'] %}
+                <tr>
+                    <td>{{ cat['categoria'] }}</td>
+                    <td class="col-monto txt-verde">
+                        {% if cat['total_ingresos'] > 0 %}+ {{ cat['total_ingresos'] | formato_monto }}{% endif %}
+                    </td>
+                    <td class="col-monto txt-rojo">
+                        {% if cat['total_egresos'] > 0 %}− {{ cat['total_egresos'] | formato_monto }}{% endif %}
+                    </td>
+                    <td class="col-monto {% if neto > 0 %}txt-verde{% elif neto < 0 %}txt-rojo{% else %}txt-gris{% endif %}">
+                        {{ neto | formato_monto }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ── Movimientos del día ────────────────────────────────────────────────── #}
+<div class="card">
+    <div class="card-header">
+        <div class="movimientos-header">
+            <h2>Movimientos del día ({{ movimientos | length }})</h2>
+        </div>
+    </div>
+    {% if movimientos %}
+    <div class="tabla-scroll">
+        <table class="tabla-movimientos">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Concepto</th>
+                    <th>Categoría</th>
+                    <th>Método</th>
+                    <th>Moneda</th>
+                    <th class="col-monto">Monto</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mov in movimientos %}
+                <tr>
+                    <td>
+                        <span class="chip chip-{{ mov['tipo'] }}">
+                            {{ '↑' if mov['tipo'] == 'ingreso' else '↓' }}
+                            {{ mov['tipo']|capitalize }}
+                        </span>
+                    </td>
+                    <td>{{ mov['concepto'] }}</td>
+                    <td>{{ mov['categoria_nombre'] or '—' }}</td>
+                    <td><span class="badge-metodo badge-{{ mov['metodo_pago'] }}">{{ mov['metodo_pago'] }}</span></td>
+                    <td>{{ mov['moneda'] }}</td>
+                    <td class="col-monto monto-{{ mov['tipo'] }}">
+                        {{ '+ ' if mov['tipo'] == 'ingreso' else '− ' }}{{ mov['monto'] | formato_monto }}
+                    </td>
+                    <td class="txt-gris txt-sm">{{ mov['observaciones'] or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="tabla-vacia">
+        <span class="icono">📋</span>
+        No hay movimientos para esta fecha.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+var WA_TEXTO  = {{ wa_texto | tojson }};
+var WA_NUMERO = '{{ wa_numero }}';
+function enviarWhatsApp() {
+    window.open('https://wa.me/' + WA_NUMERO + '?text=' + encodeURIComponent(WA_TEXTO), '_blank');
+}
+</script>
+
+{% endblock %}

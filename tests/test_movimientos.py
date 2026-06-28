@@ -181,7 +181,11 @@ def test_adelantos_agrupa_por_semana(app):
     # Más reciente primero
     assert semanas[0]['total_uyu'] == 3000.0   # semana del 22-27/01
     assert semanas[1]['total_uyu'] == 3500.0   # semana del 15-20/01
-    assert len(semanas[1]['movimientos']) == 2
+    # La semana 15-20/01 tiene 2 empleados distintos, 1 movimiento cada uno
+    empleados_sem1 = semanas[1]['empleados']
+    assert len(empleados_sem1) == 2
+    total_movs = sum(len(e['movimientos']) for e in empleados_sem1)
+    assert total_movs == 2
 
 
 def test_adelantos_sabado_cierra_en_su_propia_semana(app):

@@ -63,8 +63,11 @@
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('movimientos.guardar_fondo_caja') }}" class="fondo-form">
-            <input type="hidden" name="fecha" value="{{ fecha }}">
             <div class="fondo-row">
+                <div class="form-group fondo-fecha-col">
+                    <label for="fondo-fecha">Fecha</label>
+                    <input type="date" id="fondo-fecha" name="fecha" value="{{ fecha }}">
+                </div>
                 <div class="form-group fondo-moneda-col">
                     <label for="fondo-moneda">Moneda</label>
                     <select id="fondo-moneda" name="moneda">
