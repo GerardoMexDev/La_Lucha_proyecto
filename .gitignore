@@ -23,3 +23,7 @@ instance/
 
 # Configuración local de VS Code
 .vscode/
+
+# Archivos Excel con datos reales de la empresa — nunca se suben
+*.xlsx
+*.xls

@@ -37,6 +37,7 @@ def _id_categoria_adelanto(app):
 def test_saldo_inicial_es_cero(app):
     assert calcular_saldo_efectivo('UYU') == 0.0
     assert calcular_saldo_efectivo('USD') == 0.0
+    assert calcular_saldo_efectivo('BRL') == 0.0
 
 
 def test_ingreso_efectivo_aumenta_saldo(app):
@@ -81,6 +82,19 @@ def test_saldos_uyu_y_usd_son_independientes(app):
     agregar_movimiento(FECHA_TEST, 'ingreso', 'USD', 200,   'Venta USD', None, 'Efectivo', None)
     assert calcular_saldo_efectivo('UYU') == 10000.0
     assert calcular_saldo_efectivo('USD') == 200.0
+
+
+def test_brl_independiente_de_uyu_y_usd(app):
+    agregar_movimiento(FECHA_TEST, 'ingreso', 'BRL', 500, 'Servicio en reales', None, 'Efectivo', None)
+    assert calcular_saldo_efectivo('BRL') == 500.0
+    assert calcular_saldo_efectivo('UYU') == 0.0
+    assert calcular_saldo_efectivo('USD') == 0.0
+
+
+def test_retiro_brl_reduce_saldo(app):
+    agregar_movimiento(FECHA_TEST, 'ingreso', 'BRL', 500, 'Cobro en reales',    None, 'Efectivo', None)
+    agregar_movimiento(FECHA_TEST, 'egreso',  'BRL', 500, 'Retiro para cambio', None, 'Efectivo', None)
+    assert calcular_saldo_efectivo('BRL') == 0.0
 
 
 def test_egreso_usd_no_afecta_saldo_uyu(app):

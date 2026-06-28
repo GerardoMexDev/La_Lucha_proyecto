@@ -157,6 +157,7 @@ body {
 
 .saldo-card-uyu::before { background: var(--rojo); }
 .saldo-card-usd::before { background: #1A73C4; }
+.saldo-card-brl::before { background: #009c3b; }
 
 .saldo-label {
     font-size: 12px;
@@ -274,6 +275,7 @@ body {
     color: var(--gris-500);
     border: none;
     transition: background 0.15s, color 0.15s;
+    -webkit-user-select: none;
     user-select: none;
 }
 

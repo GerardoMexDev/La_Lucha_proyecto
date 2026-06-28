@@ -53,9 +53,11 @@ def index():
         hoy=date.today().isoformat(),
         saldo_uyu=calcular_saldo_efectivo('UYU'),
         saldo_usd=calcular_saldo_efectivo('USD'),
+        saldo_brl=calcular_saldo_efectivo('BRL'),
         movimientos=obtener_movimientos_del_dia(fecha),
         totales_uyu=calcular_totales_dia(fecha, 'UYU'),
         totales_usd=calcular_totales_dia(fecha, 'USD'),
+        totales_brl=calcular_totales_dia(fecha, 'BRL'),
         categorias=obtener_categorias(),
     )
 

@@ -24,6 +24,15 @@
         <span class="saldo-desc">Acumulado en caja física</span>
     </div>
 
+    <div class="card saldo-card saldo-card-brl">
+        <span class="saldo-label">Saldo efectivo</span>
+        <span class="saldo-moneda">Reales · BRL R$</span>
+        <span class="saldo-monto {% if saldo_brl > 0 %}positivo{% elif saldo_brl < 0 %}negativo{% else %}cero{% endif %}">
+            {{ saldo_brl | formato_monto }}
+        </span>
+        <span class="saldo-desc">Acumulado en caja física</span>
+    </div>
+
 </div>
 
 {# ── Formulario de carga ─────────────────────────────────────────────────── #}
@@ -60,6 +69,8 @@
                             <label for="moneda-uyu">$ UYU</label>
                             <input type="radio" id="moneda-usd" name="moneda" value="USD">
                             <label for="moneda-usd">$ USD</label>
+                            <input type="radio" id="moneda-brl" name="moneda" value="BRL">
+                            <label for="moneda-brl">R$ BRL</label>
                         </div>
                     </div>
                 </div>
@@ -206,7 +217,7 @@
         </div>
 
         {# Totales del día #}
-        {% if totales_uyu or totales_usd %}
+        {% if totales_uyu or totales_usd or totales_brl %}
         <div class="totales-row">
 
             <div class="totales-bloque">
@@ -235,6 +246,21 @@
                     </tr>
                     {% else %}
                     <tr><td class="txt-gris" colspan="3">Sin movimientos USD</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div class="totales-bloque">
+                <h3>Totales del día · BRL R$</h3>
+                <table class="totales-tabla">
+                    {% for t in totales_brl %}
+                    <tr>
+                        <td><span class="badge-metodo badge-{{ t['metodo_pago'] }}">{{ t['metodo_pago'] }}</span></td>
+                        <td class="txt-verde">+ {{ t['total_ingresos'] | formato_monto }}</td>
+                        <td class="txt-rojo">− {{ t['total_egresos'] | formato_monto }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td class="txt-gris" colspan="3">Sin movimientos BRL</td></tr>
                     {% endfor %}
                 </table>
             </div>
@@ -286,6 +312,8 @@
                                 <label for="edit-moneda-uyu">$ UYU</label>
                                 <input type="radio" id="edit-moneda-usd" name="moneda" value="USD">
                                 <label for="edit-moneda-usd">$ USD</label>
+                                <input type="radio" id="edit-moneda-brl" name="moneda" value="BRL">
+                                <label for="edit-moneda-brl">R$ BRL</label>
                             </div>
                         </div>
                     </div>

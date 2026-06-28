@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS movimientos (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     fecha        TEXT    NOT NULL,
     tipo         TEXT    NOT NULL CHECK(tipo IN ('ingreso', 'egreso')),
-    moneda       TEXT    NOT NULL CHECK(moneda IN ('UYU', 'USD')),
+    moneda       TEXT    NOT NULL CHECK(moneda IN ('UYU', 'USD', 'BRL')),
     monto        REAL    NOT NULL CHECK(monto > 0),
     concepto     TEXT    NOT NULL,
     categoria_id INTEGER REFERENCES categorias(id),
