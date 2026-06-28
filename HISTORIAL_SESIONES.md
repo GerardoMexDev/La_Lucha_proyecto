@@ -110,3 +110,26 @@ Todavía no arrancó la codificación. La planeación completa de la Fase 1 (mod
 - Módulo de Bancos (transferencias, tarjetas, cheques cobrados).
 - Normalización de empleados (tabla separada para evitar duplicados por nombre).
 - Configurar los números de WhatsApp de los jefes (reemplazar número de prueba).
+
+---
+
+## [2026-06-28] Comparativos, saldo histórico y alerta de fondo mínimo
+
+**Hecho:**
+- **Alerta de saldo mínimo**: si el saldo UYU cae debajo de $3.000 (`FONDO_MINIMO_UYU` en `routes/movimientos.py`), aparece un banner naranja en la pantalla principal. Si llega a negativo, el banner es rojo. Permite seguir trabajando sin bloquear.
+- **Saldo histórico UYU** (dashboard): gráfica de línea que muestra el saldo acumulado de caja efectiva por día. Parte del fondo inicial y acumula los netos diarios. Si se actualiza el fondo manualmente, lo usa como nuevo punto de partida (simula conteo físico).
+- **Comparativos** (dashboard): sección con tabs UYU/USD/BRL y 4 períodos — Semana (lunes a sábado), Quincena (1–15 vs 16–fin), Mes actual vs mes anterior, Año actual vs año anterior. Cada período muestra ingresos/egresos del período actual vs anterior con variación porcentual (verde si ingresos suben o egresos bajan; rojo si ingresos bajan o egresos suben).
+- Nuevas funciones de modelo: `obtener_totales_periodo` y `obtener_saldo_historico_diario`.
+- 34 tests, todos pasan (5 nuevos).
+
+**Decisiones:**
+- El umbral de saldo mínimo ($3.000) está definido como constante `FONDO_MINIMO_UYU = 3000` en `app/routes/movimientos.py` — fácil de cambiar.
+- La alerta aplica solo al día visualizado, no a días pasados.
+- La semana en comparativos va de lunes a sábado (consistente con el corte de adelantos).
+- El saldo histórico usa solo efectivo (Tarjeta/Transferencia/Cheque no cuentan, igual que en la pantalla principal).
+
+**Pendiente para la próxima sesión:**
+- Filtros básicos por categoría, método de pago y moneda en pantalla principal.
+- Módulo de Bancos.
+- Normalización de empleados (tabla separada).
+- Configurar números de WhatsApp reales de los jefes.
