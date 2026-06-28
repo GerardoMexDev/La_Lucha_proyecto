@@ -85,3 +85,28 @@ Todavía no arrancó la codificación. La planeación completa de la Fase 1 (mod
 - Reporte semanal / por rango de fechas (Pantalla 4).
 - Filtros básicos por categoría, método de pago y moneda (Pantalla 5).
 - Módulo de Bancos (transferencias, tarjetas, cheques cobrados).
+
+---
+
+## [2026-06-28] Reporte diario, dashboard, adelantos por empleado y WhatsApp
+
+**Hecho:**
+- **Fondo de caja**: el campo fecha ahora es visible y editable (antes estaba oculto); permite cargar el fondo para cualquier fecha sin necesidad de navegar primero a esa fecha.
+- **Reporte de adelantos rediseñado**: agrupado por semana → por empleado (concepto). Cada empleado tiene su propia tabla con sus adelantos, total por empleado y total de semana. Botones Editar (modal propio) y Borrar en cada fila. Botón "Enviar por WhatsApp" que genera texto resumido.
+- **Reporte de cajas diarias** (`/reporte/caja-diaria`): nueva pantalla con selector de fecha, tarjetas de saldo (UYU/USD/BRL), totales por método de pago, totales por categoría UYU, tabla completa de movimientos. Botón WhatsApp y botón Imprimir.
+- **Dashboard** (`/dashboard`): gráfica Chart.js de ingresos vs egresos por día (tabs UYU/USD/BRL), selector de período 7/14/30/90 días. Tablas de totales por categoría para UYU y USD. Funciona en dark/light mode.
+- **Botón WhatsApp**: número de prueba 59899760469, genera texto resumido del reporte y abre wa.me en nueva pestaña.
+- **Nav actualizado**: links Reporte diario y Dashboard agregados.
+- **Rutas**: editar/borrar ahora aceptan campo `next` para redirigir de vuelta al origen (adelantos u otros reportes).
+- 29 tests, todos pasan.
+
+**Decisiones:**
+- El "empleado" en adelantos se infiere del campo `concepto`. No hay tabla de empleados separada todavía — queda como pendiente si el negocio necesita normalizar nombres.
+- El número de WhatsApp está hardcodeado como constante `WHATSAPP_NUMERO` en `routes/movimientos.py`; fácil de cambiar cuando se definan los destinatarios reales.
+- Chart.js se carga desde CDN (cdn.jsdelivr.net) solo en la página de Dashboard.
+
+**Pendiente para la próxima sesión:**
+- Filtros básicos por categoría, método de pago y moneda en la pantalla principal.
+- Módulo de Bancos (transferencias, tarjetas, cheques cobrados).
+- Normalización de empleados (tabla separada para evitar duplicados por nombre).
+- Configurar los números de WhatsApp de los jefes (reemplazar número de prueba).
