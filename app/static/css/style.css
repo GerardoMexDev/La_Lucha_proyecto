@@ -1103,6 +1103,150 @@ body {
 [data-theme="dark"] .tab-moneda.activo,
 [data-theme="dark"] .tab-moneda:hover { background: #E8E8E8; color: #111; border-color: #E8E8E8; }
 
+/* ── Alerta de saldo bajo (pantalla principal) ──────────────────────────────── */
+.alerta-saldo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-radius: var(--radio-sm);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    border-left: 4px solid;
+}
+
+.alerta-saldo::before {
+    content: '⚠';
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.alerta-saldo-bajo {
+    background: #FFF8E1;
+    color: #795548;
+    border-left-color: #FF8F00;
+}
+
+.alerta-saldo-critico {
+    background: var(--rojo-bg);
+    color: var(--rojo-oscuro);
+    border-left-color: var(--rojo);
+}
+
+[data-theme="dark"] .alerta-saldo-bajo {
+    background: #2B2000;
+    color: #FFB300;
+    border-left-color: #FF8F00;
+}
+
+[data-theme="dark"] .alerta-saldo-critico {
+    background: #200B0B;
+    color: #EF5350;
+    border-left-color: var(--rojo);
+}
+
+/* ── Dashboard: tabla sin padding extra ─────────────────────────────────────── */
+.dash-tabla-body { padding: 0; }
+
+/* ── Dashboard: comparativos ────────────────────────────────────────────────── */
+.dash-comp-card { margin-bottom: 24px; }
+
+.comp-panel-oculto { display: none; }
+
+.comp-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--gris-200);
+    border-radius: var(--radio-sm);
+    overflow: hidden;
+}
+
+.comp-bloque {
+    background: var(--blanco);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.comp-titulo {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--gris-500);
+}
+
+.comp-fila {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.comp-periodo-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.comp-periodo-ant {
+    text-align: right;
+    align-items: flex-end;
+}
+
+.comp-label-actual,
+.comp-label-anterior {
+    font-size: 11px;
+    color: var(--gris-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.comp-ingr,
+.comp-egr {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.comp-vs {
+    font-size: 11px;
+    color: var(--gris-500);
+    padding-top: 14px;
+    flex-shrink: 0;
+}
+
+.comp-variaciones {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.var-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+/* Ingresos: sube = bueno (verde), baja = malo (rojo) */
+.var-pill.var-pos  { background: var(--verde-bg); color: var(--verde); }
+.var-pill.var-neg  { background: var(--rojo-bg);  color: var(--rojo);  }
+
+/* Egresos: baja = bueno (verde), sube = malo (rojo) */
+.var-pill.var-egr-neg { background: var(--verde-bg); color: var(--verde); }
+.var-pill.var-egr-pos { background: var(--rojo-bg);  color: var(--rojo);  }
+
+[data-theme="dark"] .comp-bloque { background: var(--blanco); }
+[data-theme="dark"] .comp-grid   { background: #1A1A1A; }
+
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
     .saldo-grid { grid-template-columns: 1fr; }
@@ -1112,4 +1256,5 @@ body {
     .totales-row { grid-template-columns: 1fr; }
     .dash-tablas-grid { grid-template-columns: 1fr; }
     .reporte-acciones { width: 100%; }
+    .comp-grid { grid-template-columns: 1fr 1fr; }
 }

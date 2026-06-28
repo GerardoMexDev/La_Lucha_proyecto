@@ -21,15 +21,15 @@
     </div>
 </div>
 
-{# ── Gráfica de ingresos y egresos ──────────────────────────────────────── #}
+{# ── Gráfica Ingresos vs Egresos ─────────────────────────────────────────── #}
 <div class="card dash-chart-card">
     <div class="card-header">
         <div class="dash-chart-header">
             <h2>Ingresos vs Egresos</h2>
             <div class="dash-moneda-tabs">
-                <button class="tab-moneda activo" onclick="cambiarMoneda('UYU', this)">$ UYU</button>
-                <button class="tab-moneda" onclick="cambiarMoneda('USD', this)">$ USD</button>
-                <button class="tab-moneda" onclick="cambiarMoneda('BRL', this)">R$ BRL</button>
+                <button type="button" class="tab-moneda activo" onclick="cambiarMoneda('UYU', this)">$ UYU</button>
+                <button type="button" class="tab-moneda" onclick="cambiarMoneda('USD', this)">$ USD</button>
+                <button type="button" class="tab-moneda" onclick="cambiarMoneda('BRL', this)">R$ BRL</button>
             </div>
         </div>
     </div>
@@ -40,12 +40,93 @@
     </div>
 </div>
 
-{# ── Tablas por categoría ───────────────────────────────────────────────── #}
+{# ── Gráfica Saldo histórico UYU ─────────────────────────────────────────── #}
+<div class="card dash-chart-card">
+    <div class="card-header">
+        <div class="dash-chart-header">
+            <h2>Saldo histórico · Efectivo UYU</h2>
+            <span class="txt-gris txt-sm">Acumulado diario (solo movimientos en Efectivo)</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="chart-container">
+            <canvas id="grafica-saldo"></canvas>
+        </div>
+    </div>
+</div>
+
+{# ── Comparativos por período y moneda ───────────────────────────────────── #}
+<div class="card dash-comp-card">
+    <div class="card-header">
+        <div class="dash-chart-header">
+            <h2>Comparativos</h2>
+            <div class="dash-moneda-tabs">
+                <button type="button" class="tab-comp activo" onclick="cambiarComp('UYU', this)">$ UYU</button>
+                <button type="button" class="tab-comp" onclick="cambiarComp('USD', this)">$ USD</button>
+                <button type="button" class="tab-comp" onclick="cambiarComp('BRL', this)">R$ BRL</button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+
+        {% for moneda in ['UYU', 'USD', 'BRL'] %}
+        <div class="comp-panel {% if moneda != 'UYU' %}comp-panel-oculto{% endif %}" id="comp-{{ moneda }}">
+            <div class="comp-grid">
+
+                {% set periodos = [
+                    ('semana',   'Semana'),
+                    ('quincena', 'Quincena'),
+                    ('mes',      'Mes'),
+                    ('anio',     'Año'),
+                ] %}
+
+                {% for clave, etiqueta in periodos %}
+                {% set p = comparativos[moneda][clave] %}
+                <div class="comp-bloque">
+                    <div class="comp-titulo">{{ etiqueta }}</div>
+
+                    <div class="comp-fila">
+                        <div class="comp-periodo-col">
+                            <span class="comp-label-actual">{{ p.label_actual }}</span>
+                            <span class="comp-ingr txt-verde">↑ {{ p.actual.ingresos | formato_monto }}</span>
+                            <span class="comp-egr  txt-rojo" >↓ {{ p.actual.egresos  | formato_monto }}</span>
+                        </div>
+                        <div class="comp-vs">vs</div>
+                        <div class="comp-periodo-col comp-periodo-ant">
+                            <span class="comp-label-anterior">{{ p.label_anterior }}</span>
+                            <span class="comp-ingr txt-gris">↑ {{ p.anterior.ingresos | formato_monto }}</span>
+                            <span class="comp-egr  txt-gris">↓ {{ p.anterior.egresos  | formato_monto }}</span>
+                        </div>
+                    </div>
+
+                    <div class="comp-variaciones">
+                        {% if p.var_ingr is not none %}
+                        <span class="var-pill var-{{ 'pos' if p.var_ingr >= 0 else 'neg' }}">
+                            Ingr. {{ '+' if p.var_ingr >= 0 else '' }}{{ p.var_ingr }}%
+                        </span>
+                        {% endif %}
+                        {% if p.var_egr is not none %}
+                        <span class="var-pill var-egr-{{ 'pos' if p.var_egr >= 0 else 'neg' }}">
+                            Egr. {{ '+' if p.var_egr >= 0 else '' }}{{ p.var_egr }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+{# ── Tablas por categoría ─────────────────────────────────────────────────── #}
 <div class="dash-tablas-grid">
 
     <div class="card">
         <div class="card-header"><h2>Por categoría · UYU</h2></div>
-        <div class="card-body" style="padding:0;">
+        <div class="card-body dash-tabla-body">
             {% if totales_cat_uyu %}
             <table class="tabla-movimientos">
                 <thead>
@@ -77,7 +158,7 @@
 
     <div class="card">
         <div class="card-header"><h2>Por categoría · USD</h2></div>
-        <div class="card-body" style="padding:0;">
+        <div class="card-body dash-tabla-body">
             {% if totales_cat_usd %}
             <table class="tabla-movimientos">
                 <thead>
@@ -109,116 +190,135 @@
 
 </div>
 
-{# Datos para Chart.js, generados server-side #}
+{# ── JS: datos para gráficas ──────────────────────────────────────────────── #}
 <script>
-var GRAFICA_DATA  = {{ datos_grafica | tojson }};
-var GRAFICA_DIAS  = {{ dias_labels | tojson }};
-var monedaActual  = 'UYU';
-var chart         = null;
+var GRAFICA_DATA     = {{ datos_grafica | tojson }};
+var GRAFICA_DIAS     = {{ dias_labels | tojson }};
+var SALDO_HISTORICO  = {{ saldo_historico | tojson }};
+var monedaActual     = 'UYU';
+var chartPrincipal   = null;
+var chartSaldo       = null;
 
 function etiquetaCorta(fecha) {
-    var partes = fecha.split('-');
-    return partes[2] + '/' + partes[1];
+    var p = fecha.split('-');
+    return p[2] + '/' + p[1];
 }
 
-function construirDatasets(moneda) {
-    var datos  = GRAFICA_DATA[moneda] || {};
-    var ingr   = GRAFICA_DIAS.map(function(d) { return (datos[d] || {ingresos:0}).ingresos; });
-    var egr    = GRAFICA_DIAS.map(function(d) { return (datos[d] || {egresos:0}).egresos; });
+function coloresGrafica() {
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
     return {
-        ingresos: ingr,
-        egresos:  egr,
+        grid:  dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
+        tick:  dark ? '#888' : '#777',
+        borde: dark ? '#222' : '#E8E8E8',
     };
 }
 
-function crearGrafica(moneda) {
-    var ctx = document.getElementById('grafica-principal').getContext('2d');
-    var ds  = construirDatasets(moneda);
-    var labels = GRAFICA_DIAS.map(etiquetaCorta);
+function crearGraficaPrincipal(moneda) {
+    var ctx  = document.getElementById('grafica-principal').getContext('2d');
+    var datos = GRAFICA_DATA[moneda] || {};
+    var ingr  = GRAFICA_DIAS.map(function(d) { return (datos[d] || {}).ingresos || 0; });
+    var egr   = GRAFICA_DIAS.map(function(d) { return (datos[d] || {}).egresos  || 0; });
+    var c     = coloresGrafica();
+    var labs  = GRAFICA_DIAS.map(etiquetaCorta);
 
-    if (chart) { chart.destroy(); }
-
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var gridColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
-    var tickColor  = isDark ? '#888' : '#777';
-    var borderColor = isDark ? '#222' : '#E8E8E8';
-
-    chart = new Chart(ctx, {
+    if (chartPrincipal) { chartPrincipal.destroy(); }
+    chartPrincipal = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: labs,
             datasets: [
-                {
-                    label: 'Ingresos',
-                    data: ds.ingresos,
-                    backgroundColor: 'rgba(30, 125, 60, 0.75)',
-                    borderColor: 'rgba(30, 125, 60, 1)',
-                    borderWidth: 1,
-                    borderRadius: 3,
-                },
-                {
-                    label: 'Egresos',
-                    data: ds.egresos,
-                    backgroundColor: 'rgba(196, 30, 30, 0.70)',
-                    borderColor: 'rgba(196, 30, 30, 1)',
-                    borderWidth: 1,
-                    borderRadius: 3,
-                }
+                { label: 'Ingresos', data: ingr,
+                  backgroundColor: 'rgba(30,125,60,0.75)', borderColor: 'rgba(30,125,60,1)',
+                  borderWidth: 1, borderRadius: 3 },
+                { label: 'Egresos', data: egr,
+                  backgroundColor: 'rgba(196,30,30,0.70)', borderColor: 'rgba(196,30,30,1)',
+                  borderWidth: 1, borderRadius: 3 },
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: {
-                    labels: { color: tickColor, font: { size: 13 } }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(ctx) {
-                            return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('es-UY', {minimumFractionDigits:0, maximumFractionDigits:0});
-                        }
+        options: _opcionesGrafica(c, true)
+    });
+}
+
+function crearGraficaSaldo() {
+    var ctx    = document.getElementById('grafica-saldo').getContext('2d');
+    var saldos = SALDO_HISTORICO.map(function(d) { return d.saldo; });
+    var labs   = SALDO_HISTORICO.map(function(d) { return etiquetaCorta(d.fecha); });
+    var c      = coloresGrafica();
+
+    if (chartSaldo) { chartSaldo.destroy(); }
+    chartSaldo = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labs,
+            datasets: [{
+                label: 'Saldo UYU efectivo',
+                data: saldos,
+                borderColor: 'rgba(196,30,30,0.9)',
+                backgroundColor: 'rgba(196,30,30,0.08)',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.3,
+            }]
+        },
+        options: _opcionesGrafica(c, false)
+    });
+}
+
+function _opcionesGrafica(c, esBarra) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { labels: { color: c.tick, font: { size: 13 } } },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        return ctx.dataset.label + ': ' +
+                            ctx.parsed.y.toLocaleString('es-UY', {minimumFractionDigits:0, maximumFractionDigits:0});
                     }
                 }
-            },
-            scales: {
-                x: {
-                    ticks: { color: tickColor, maxRotation: 45, minRotation: 0, font: { size: 11 } },
-                    grid: { color: gridColor },
-                    border: { color: borderColor }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: tickColor,
-                        callback: function(v) {
-                            return v >= 1000 ? (v/1000).toFixed(0) + 'k' : v;
-                        }
-                    },
-                    grid: { color: gridColor },
-                    border: { color: borderColor }
-                }
             }
+        },
+        scales: {
+            x: { ticks: { color: c.tick, maxRotation: 45, font: { size: 11 } },
+                 grid: { color: c.grid }, border: { color: c.borde } },
+            y: { beginAtZero: esBarra,
+                 ticks: { color: c.tick,
+                           callback: function(v) { return v >= 1000 ? (v/1000).toFixed(0)+'k' : v; } },
+                 grid: { color: c.grid }, border: { color: c.borde } }
         }
-    });
+    };
 }
 
 function cambiarMoneda(moneda, btn) {
     monedaActual = moneda;
     document.querySelectorAll('.tab-moneda').forEach(function(b) { b.classList.remove('activo'); });
     btn.classList.add('activo');
-    crearGrafica(moneda);
+    crearGraficaPrincipal(moneda);
+}
+
+function cambiarComp(moneda, btn) {
+    document.querySelectorAll('.tab-comp').forEach(function(b) { b.classList.remove('activo'); });
+    btn.classList.add('activo');
+    document.querySelectorAll('.comp-panel').forEach(function(p) { p.classList.add('comp-panel-oculto'); });
+    var panel = document.getElementById('comp-' + moneda);
+    if (panel) panel.classList.remove('comp-panel-oculto');
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    crearGrafica('UYU');
+    crearGraficaPrincipal('UYU');
+    crearGraficaSaldo();
 
-    // Re-crear el gráfico cuando cambia el tema (colores)
     var btnTema = document.getElementById('btn-tema');
     if (btnTema) {
         btnTema.addEventListener('click', function () {
-            setTimeout(function() { crearGrafica(monedaActual); }, 50);
+            setTimeout(function() {
+                crearGraficaPrincipal(monedaActual);
+                crearGraficaSaldo();
+            }, 50);
         });
     }
 });

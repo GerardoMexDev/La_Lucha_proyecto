@@ -282,3 +282,90 @@ def obtener_datos_grafica(dias=30):
                 'egresos': float(fila['egresos']),
             }
     return result
+
+
+def obtener_totales_periodo(fecha_desde, fecha_hasta, moneda):
+    """
+    Ingresos y egresos totales (todos los métodos de pago) en un período y moneda.
+    fecha_desde y fecha_hasta pueden ser strings ISO o date objects.
+    """
+    if hasattr(fecha_desde, 'isoformat'):
+        fecha_desde = fecha_desde.isoformat()
+    if hasattr(fecha_hasta, 'isoformat'):
+        fecha_hasta = fecha_hasta.isoformat()
+    db = get_db()
+    fila = db.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE WHEN tipo='ingreso' THEN monto ELSE 0 END), 0) AS ingresos,
+            COALESCE(SUM(CASE WHEN tipo='egreso'  THEN monto ELSE 0 END), 0) AS egresos
+        FROM movimientos
+        WHERE fecha BETWEEN ? AND ? AND moneda = ?
+        """,
+        (fecha_desde, fecha_hasta, moneda)
+    ).fetchone()
+    ingresos = float(fila['ingresos'])
+    egresos = float(fila['egresos'])
+    return {
+        'ingresos': ingresos,
+        'egresos': egresos,
+        'neto': ingresos - egresos,
+    }
+
+
+def obtener_saldo_historico_diario(dias=30, moneda='UYU'):
+    """
+    Saldo de caja efectiva acumulado por día para los últimos N días.
+    Parte del último fondo registrado antes del período y acumula netos diarios.
+    Si se registra un nuevo fondo durante el período, se usa como nuevo punto de partida
+    (simula el conteo físico de caja).
+    """
+    hoy = date_type.today()
+    desde = (hoy - timedelta(days=dias - 1)).isoformat()
+    hasta = hoy.isoformat()
+
+    db = get_db()
+
+    # Todos los fondos <= hoy para calcular herencia
+    fondos = db.execute(
+        """
+        SELECT fecha, monto FROM fondo_caja
+        WHERE moneda = ? AND fecha <= ?
+        ORDER BY fecha
+        """,
+        (moneda, hasta)
+    ).fetchall()
+    fondos_dict = {f['fecha']: float(f['monto']) for f in fondos}
+
+    # Fondo base: último registrado ANTES del período
+    fondo_base = 0.0
+    for f in fondos:
+        if f['fecha'] < desde:
+            fondo_base = float(f['monto'])
+
+    # Neto efectivo por día (solo Efectivo cuenta para el saldo real de caja)
+    netos = db.execute(
+        """
+        SELECT fecha,
+               SUM(CASE WHEN tipo='ingreso' THEN monto ELSE -monto END) AS neto
+        FROM movimientos
+        WHERE fecha BETWEEN ? AND ? AND moneda = ? AND metodo_pago = 'Efectivo'
+        GROUP BY fecha
+        ORDER BY fecha
+        """,
+        (desde, hasta, moneda)
+    ).fetchall()
+    neto_por_dia = {f['fecha']: float(f['neto']) for f in netos}
+
+    # Construir balance acumulado día a día
+    saldo = fondo_base
+    resultado = []
+    for i in range(dias):
+        dia = (hoy - timedelta(days=dias - 1 - i)).isoformat()
+        # Si hay un nuevo fondo para este día, reinicia la base (conteo físico)
+        if dia in fondos_dict and dia >= desde:
+            saldo = fondos_dict[dia]
+        saldo += neto_por_dia.get(dia, 0)
+        resultado.append({'fecha': dia, 'saldo': round(saldo, 2)})
+
+    return resultado

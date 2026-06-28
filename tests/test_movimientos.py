@@ -12,6 +12,8 @@ from app.models.movimientos import (
     establecer_fondo_caja,
     calcular_neto_efectivo_dia,
     calcular_totales_dia_por_tipo,
+    obtener_totales_periodo,
+    obtener_saldo_historico_diario,
 )
 
 FECHA_TEST = '2024-01-15'
@@ -250,3 +252,51 @@ def test_totales_dia_por_tipo(app):
     totales = calcular_totales_dia_por_tipo(FECHA_TEST, 'USD')
     assert totales['total_ingresos'] == 200.0
     assert totales['total_egresos']  == 50.0
+
+
+# ── obtener_totales_periodo ────────────────────────────────────────────────────
+
+def test_totales_periodo_sin_movimientos(app):
+    t = obtener_totales_periodo('2024-01-01', '2024-01-31', 'UYU')
+    assert t['ingresos'] == 0.0
+    assert t['egresos']  == 0.0
+    assert t['neto']     == 0.0
+
+
+def test_totales_periodo_acumula_rango(app):
+    agregar_movimiento('2024-01-10', 'ingreso', 'UYU', 5000, 'Venta', None, 'Efectivo', None)
+    agregar_movimiento('2024-01-20', 'ingreso', 'UYU', 3000, 'Venta', None, 'Efectivo', None)
+    agregar_movimiento('2024-01-25', 'egreso',  'UYU', 1000, 'Gasto', None, 'Efectivo', None)
+    # Solo incluye del 15 al 31
+    t = obtener_totales_periodo('2024-01-15', '2024-01-31', 'UYU')
+    assert t['ingresos'] == 3000.0
+    assert t['egresos']  == 1000.0
+    assert t['neto']     == 2000.0
+
+
+def test_totales_periodo_excluye_otra_moneda(app):
+    agregar_movimiento('2024-01-10', 'ingreso', 'USD', 200, 'Cobro USD', None, 'Efectivo', None)
+    t = obtener_totales_periodo('2024-01-01', '2024-01-31', 'UYU')
+    assert t['ingresos'] == 0.0
+
+
+# ── obtener_saldo_historico_diario ────────────────────────────────────────────
+
+def test_saldo_historico_sin_datos(app):
+    hist = obtener_saldo_historico_diario(7, 'UYU')
+    assert len(hist) == 7
+    assert all(d['saldo'] == 0.0 for d in hist)
+
+
+def test_saldo_historico_acumula_netos(app):
+    from datetime import date, timedelta
+    hoy = date.today().isoformat()
+    ayer = (date.today() - timedelta(days=1)).isoformat()
+    establecer_fondo_caja(ayer, 'UYU', 10000)
+    agregar_movimiento(ayer, 'ingreso', 'UYU', 2000, 'Venta', None, 'Efectivo', None)
+    agregar_movimiento(hoy,  'egreso',  'UYU',  500, 'Gasto', None, 'Efectivo', None)
+    hist = obtener_saldo_historico_diario(2, 'UYU')
+    # Ayer: fondo 10000 + 2000 = 12000
+    # Hoy:  12000 - 500 = 11500
+    assert hist[0]['saldo'] == 12000.0
+    assert hist[1]['saldo'] == 11500.0

@@ -3,6 +3,18 @@
 
 {% block content %}
 
+{# ── Alerta de saldo bajo ─────────────────────────────────────────────────────── #}
+{% if alerta_saldo %}
+<div class="alerta-saldo alerta-saldo-{{ alerta_saldo }}">
+    {% if alerta_saldo == 'critico' %}
+    <strong>Caja UYU en negativo:</strong> {{ saldo_dia_uyu | formato_monto }} — verificar movimientos.
+    {% else %}
+    <strong>Saldo UYU por debajo del mínimo:</strong>
+    disponible {{ saldo_dia_uyu | formato_monto }} / mínimo requerido ${{ fondo_minimo_uyu | formato_monto }}.
+    {% endif %}
+</div>
+{% endif %}
+
 {# ── Sección superior: saldos del día ───────────────────────────────────────── #}
 <div class="saldo-grid">
 
