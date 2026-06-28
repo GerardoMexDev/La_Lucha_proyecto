@@ -61,3 +61,27 @@ Todavía no arrancó la codificación. La planeación completa de la Fase 1 (mod
 - Reporte diario completo (Pantalla 3 del plan): elegir fecha, ver movimientos + saldo de efectivo + totales por método de pago en una vista de impresión/exportación.
 - Reporte semanal / por rango de fechas (Pantalla 4).
 - Filtros básicos por categoría, método de pago y moneda (Pantalla 5).
+
+---
+
+## [2026-06-28] Importación Excel, soporte BRL, fondo de caja y rediseño pantalla principal
+
+**Hecho:**
+- **Importación del Excel**: script `scripts/importar_excel.py` lee `Control_Contable_Sueldos_Gomeria_Monedas_2.xlsx` (estructura horizontal por semanas), infiere categorías por patrones en el concepto, normaliza métodos de pago. Se importaron 410 movimientos (mayo–jun 2026). El Excel queda en `.gitignore`.
+- **Soporte BRL (Reales brasileños)**: moneda nueva en schema, tarjeta de saldo verde en dashboard, radio en formulario y modal. Script `scripts/migrar_brl.py` para migrar la DB existente. Dos filas del Excel que estaban sin monto (pagadas en reales, importe en observaciones) ahora se importan como BRL.
+- **Fondo de caja**: nueva tabla `fondo_caja(fecha, moneda, monto)`. Se puede registrar el efectivo inicial del día/período. El saldo UYU ahora es: fondo + ingresos efectivo del día − egresos efectivo del día (solo Efectivo cuenta; Tarjeta/Transferencia/Cheque van a banco).
+- **Pantalla principal rediseñada**: tarjetas muestran la fórmula explícita (Fondo + Ingr. ef. − Egr. ef.). USD y BRL muestran solo totales informativos del día. Tabla de movimientos colapsable. Método de pago muestra "(→ banco)" para no-efectivo.
+- **Reporte de adelantos mejorado**: columnas simplificadas a Fecha / Empleado (concepto) / Monto UYU / Monto USD, con fila de total semanal en `<tfoot>`.
+- **Filtro `formato_fecha`** en templates (YYYY-MM-DD → DD/MM/YYYY).
+- 29 tests, todos pasan (7 nuevos de fondo_caja).
+
+**Decisiones:**
+- BRL es informativa como USD: no se suma al saldo efectivo UYU. Se retira para cambio en casa de cambio y los pesos entran como ingreso UYU aparte.
+- Tarjeta/Transferencia/Cheque son siempre informativos — van a banco (módulo futuro).
+- El fondo de caja es "heredable": si no hay fondo para la fecha exacta, se usa el último registrado antes de esa fecha.
+
+**Pendiente para la próxima sesión:**
+- Reporte diario completo (Pantalla 3): elegir fecha, ver movimientos + saldo + totales, vista de impresión.
+- Reporte semanal / por rango de fechas (Pantalla 4).
+- Filtros básicos por categoría, método de pago y moneda (Pantalla 5).
+- Módulo de Bancos (transferencias, tarjetas, cheques cobrados).
